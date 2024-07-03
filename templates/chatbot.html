@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      .form_format {
+        background-color: white;
+        display: flex;
+        justify-content: center;
+      }
+
+      .container {
+        width: 40%;
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+      }
+
+      .chat_container {
+        width: 100%;
+        height: 400px;
+        display: flex;
+        justify-content: center;
+        border: 1px solid #ccc;
+        background-color: white;
+        padding: 12px;
+        border-radius: 4px;
+      }
+
+      .question_container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      input[type="submit"] {
+        background-color: #04aa6d;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      input[type="submit"]:hover {
+        background-color: darkgreen;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form_format">
+      <div class="container">
+        <h2>Khung chat tư vấn thông tin</h2>
+        <div class="chat_container"></div>
+        <div class="question_container">
+          <div class="chat-main"></div>
+          <input
+            type="text"
+            id="questioninput"
+            placeholder="Type or ask me something"
+          />
+          <input
+            id="onClickAddChat"
+            type="submit"
+            value=">"
+            onclick="submit_data()"
+          />
+        </div>
+      </div>
+    </div>
+    <script>
+      async function submit_data() {
+        debugger;
+        const question = document.getElementById("questioninput").value;
+        console.log("Question:", question); // Debug
+        const response = await fetch("/chatbot", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ question: question }),
+        });
+        const data = await response.json();
+        console.log("Response from server:", data); // Debug
+        // Clear the input field
+        document.getElementById("questioninput").value = "";
+      }
+      var arrChat = [{}];
+      // document.getElementById("btnAddChat").addEventListener("click", onClickAddChat);
+
+      function onClickAddChat() {
+        // var conversation = {
+        //   id: 1,
+        //   question: '',
+        //   response: '',
+        //   dateCreate: _dateCreate //!!!!!import hàm date trong tts chứ cái này bên file gốc
+        // };
+        debugger;
+        var elQuestion = document.getElementById("questioninput");
+        var elResponse = document.getElementById("responseoutput"); //!!!!chưa làm đc: lấy output của bot xuất lên màn hình
+        let question = elQuestion.value;
+        let response = elResponse.value;
+
+        var chatQuestion = document.createElement("div");
+        chatQuestion.classList.add("chat-question");
+        chatQuestion.innerText = question;
+        chat_container.appendChild(chatQuestion);
+
+        var chatResponse = document.createElement("div");
+        chatResponse.classList.add("chat-response");
+        chatResponse.innerText = response;
+        chat_container.appendChild(chatResponse);
+
+        let chat_container = document.getElementsByClassName("chat_container");
+
+        if (!conversation.question) {
+          alert("Type or ask me something");
+          return;
+        }
+
+        // arrChat.unshift(question);
+        // var articleDiv = createArticleHTML(article);
+        // var chatMain = document.getElementById("chat-main");
+        // chatMain.appendChild(articleDiv);
+
+        // elTitle.value = "";
+        // elDescription.value = "";
+
+        console.log("DS Bài viết sau khi thêm mới", arrChat);
+        //   document.getElementById("demo").innerHTML = Date();
+      }
+
+      // function RenderArticle() {
+      //   var chatMain = document.getElementById("chat-main");
+      //   arrChat.forEach(function(conversation, index) {
+      //     var articleDiv = createArticleHTML(conversation);
+      //     chatMain.appendChild(articleDiv);
+      //   });
+      // };
+      // function createArticleHTML(article) {
+      //   var articleDiv = document.createElement("div");
+      //   articleDiv.classList.add("conversation");
+
+      //   var chatQuestion = document.createElement("div");
+      //   chatQuestion.classList.add("chat-question");
+      //   chatQuestion.innerText = conversation.question;
+      //   articleDiv.appendChild(chatQuestion);
+
+      //   var chatResponse = document.createElement("div");
+      //   chatResponse.classList.add("chat-response")
+      //   chatResponse.innerText = conversation.response;
+      //   articleDiv.appendChild(chatResponse);
+
+      //   var articleDate = document.createElement("div");
+      //   articleDate.classList.add("article-date")
+      //   articleDate.innerText = article.dateCreate
+      //   articleDiv.appendChild(articleDate);
+
+      //   return articleDiv;
+      // }
+      // RenderArticle();
+    </script>
+  </body>
+</html>
