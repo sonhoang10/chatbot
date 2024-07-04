@@ -14,7 +14,7 @@ app = Flask(__name__)
 def chatbot():
     if request.method == 'POST':
         data = request.get_json()
-        print("Received data:", data)  # Debug print
+        # print("Received data:", data)  # Debug print
         question = data.get('question')
         print("Question received:", question)  # Debug print
         
@@ -22,10 +22,10 @@ def chatbot():
         response = openai_chat_send(question)
         print(response)
         # Convert response to speech
-        # text_to_speech(response)
+        # text_to_speech(response) #tạm hide để làm xong tải câu trl trc đã
         
         # Record the response
-        # record_response(question, response)
+        # record_response(question, response) #tạm hide để làm xong tải câu trl trc đã
         
         return jsonify({'response': response})
     return render_template('chatbot.html')

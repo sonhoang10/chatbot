@@ -50,7 +50,7 @@ def change_voice(engine, language, gender='VoiceGenderFemale'):
 # list_available_voices(engine)
 
 # Try to change the voice
-change_voice(engine, "en_US", "VoiceGenderFemale")
+# change_voice(engine, "en_US", "VoiceGenderFemale")
 # def generate_random_name():
 #     adjective = random.choice(adjectives)
 #     noun = random.choice(nouns)
@@ -99,6 +99,8 @@ def record_response(question, response):
     with open(recordings_file, 'w') as file:
         json.dump(recordings, file, indent=4)
     print(f"Recording saved: {recording}")
+
+
 
 
 # question = input("Type your question: ")
