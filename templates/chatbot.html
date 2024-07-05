@@ -95,7 +95,7 @@
   <body>
     <div class="form_format">
       <div class="container">
-        <h2>Khung chat tư vấn thông tin</h2>
+        <h2>puka chatbot</h2>
         <div class="chat_container"></div>
         <div class="question_line">
           <input
@@ -117,19 +117,20 @@
         var question = document.getElementById("questioninput").value;
         onAppendClientChat();
         console.log("Question:", question);
-        var response = await fetch("/chatbot", {
+        var data = {};
+        var response = await fetch("/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ question: question }),
         });
-        var data = await response.json();
+        data = await response.json();
         console.log("Response from server:", data);
         onAppendBotChat(data);
         scrollToBottom();
       }
-      var arrChat = [{}];
+
       function onAppendClientChat() {
         var chat_container = document.querySelector(".chat_container");
         var elQuestion = document.getElementById("questioninput");
@@ -139,12 +140,25 @@
         chat_container.appendChild(chatQuestion);
         elQuestion.value = "";
       }
+
       function onAppendBotChat(data) {
         var chat_container = document.querySelector(".chat_container");
-        var chatResponse = document.createElement("p");
-        chatResponse.classList.add("chat-response");
-        chatResponse.innerText = data.response || "không tìm thấy kết quả";
-        chat_container.appendChild(chatResponse);
+
+        var chatResponse_text = document.createElement("p");
+        chatResponse_text.classList.add("chat-response");
+        chatResponse_text.innerText =
+          data.response_text || "không tìm thấy kết quả";
+        chat_container.appendChild(chatResponse_text);
+
+        if (!data.response_audio === false) {
+          var chatResponse_audio = document.createElement("audio");
+          chatResponse_audio.controls = "controls";
+          chat_container.appendChild(chatResponse_audio);
+
+          var audio_source = document.createElement("source");
+          audio_source.src = "/mp3";
+          chatResponse_audio.appendChild(audio_source);
+        }
       }
 
       //khung chat tự động scroll down khi nhập question mới

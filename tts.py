@@ -4,6 +4,8 @@ import os
 import json
 from datetime import datetime
 from dotenv import load_dotenv
+# from gtts import gTTS #text-to-speech
+# import pygame #play audio file
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,8 +26,7 @@ else:
 # nouns = ["sea", "love", "dreams", "song", "rain", "sunrise", "silence", "echo"]
 
 # Initializing pyttsx3 for text-to-speech output
-engine = pyttsx3.init()
-engine.setProperty('rate', 185)
+
 
 def change_voice(engine, language, gender='VoiceGenderFemale'):
     voices = engine.getProperty('voices')
@@ -36,45 +37,34 @@ def change_voice(engine, language, gender='VoiceGenderFemale'):
     # print(f"Desired voice with language '{language}' and gender '{gender}' not found. Using default voice.")
     return False
 
-# def list_available_voices(engine):
-#     voices = engine.getProperty('voices')
-#     for voice in voices:
-#         print(f"ID: {voice.id}")
-#         print(f"Name: {voice.name}")
-#         print(f"Languages: {voice.languages}")
-#         print(f"Gender: {voice.gender}")
-#         print("-" * 20)
+def speech_to_text(audio_path):
+    print("entered transcribe", "./" + audio_path)
+    audio_file = open(audio_path, "rb")
+    print(audio_file)
+    transcript = openai.Audio.transcribe("whisper-1", audio_file)
+    # print(transcript) //debug
+    return transcript['text']
 
-# List available voices for debugging purposes
-# print("Available voices:")
-# list_available_voices(engine)
-
-# Try to change the voice
-# change_voice(engine, "en_US", "VoiceGenderFemale")
-# def generate_random_name():
-#     adjective = random.choice(adjectives)
-#     noun = random.choice(nouns)
-#     return f"{adjective} {noun}"
-
-# def speech_to_text(audio_path):
-#     print("entered transcribe", "./" + audio_path)
-#     audio_file = open(audio_path, "rb")
-#     print(audio_file)
-#     transcript = openai.Audio.transcribe("whisper-1", audio_file)
-#     print(transcript)
-#     return transcript['text']
-
+ #tạo file mp3
 def text_to_speech(response):
-    engine.say(response)
+    engine = pyttsx3.init()
+    engine.save_to_file(response, 'test.mp3')
     engine.runAndWait()
+    return 'test.mp3'
 
-def save_response_to_file(response, folder="responses"):
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    response_filename = os.path.join(folder, f"response_{len(os.listdir(folder)) + 1}.txt")
-    with open(response_filename, 'w') as f:
-        f.write(response)
-    print(f"Response saved to {response_filename}")
+# def text_to_speech(response):
+#     text_to_speech = gTTS(text=response) #đọc ra
+#     text_to_speech.save("chatbot_audio.mp3") #save audio to mp3 file
+#     pygame.mixer.music.load("chatbot_audio.mp3") #load mp3 file
+#     pygame.mixer.music.play() #play audio
+
+# def save_response_to_file(response, folder="responses"):
+#     if not os.path.exists(folder):
+#         os.makedirs(folder)
+#     response_filename = os.path.join(folder, f"response_{len(os.listdir(folder)) + 1}.txt")
+#     with open(response_filename, 'w') as f:
+#         f.write(response)
+#     print(f"Response saved to {response_filename}")
 
 def openai_chat_send(transcript):
     messages = [

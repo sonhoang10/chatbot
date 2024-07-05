@@ -73,5 +73,40 @@
         "timestamp": "2024-07-03T15:31:54.664534",
         "question": "a",
         "response": "How can I assist you today?"
+    },
+    {
+        "timestamp": "2024-07-05T15:55:15.005575",
+        "question": "sdgdjh",
+        "response": "It looks like your message may have been a typo or incomplete. How can I assist you today?"
+    },
+    {
+        "timestamp": "2024-07-05T15:55:23.057374",
+        "question": "aaa",
+        "response": "Hello! How can I assist you today?"
+    },
+    {
+        "timestamp": "2024-07-05T15:57:33.546703",
+        "question": "fgdjhf",
+        "response": "It looks like you may have pressed some random keys by mistake. Is there anything specific you need help with?"
+    },
+    {
+        "timestamp": "2024-07-05T15:59:57.791251",
+        "question": "dfhzdrnh",
+        "response": "It looks like you might have entered a random sequence of characters. How can I assist you today?"
+    },
+    {
+        "timestamp": "2024-07-05T16:10:30.707767",
+        "question": "ewfgerg",
+        "response": "It seems like you might have typed a random combination of letters. Is there something specific you would like assistance with?"
+    },
+    {
+        "timestamp": "2024-07-05T16:10:56.869836",
+        "question": "my name is pu",
+        "response": "Nice to meet you, Pu! How can I assist you today?"
+    },
+    {
+        "timestamp": "2024-07-05T16:12:48.481819",
+        "question": "12345",
+        "response": "Hello! How can I assist you today?"
     }
 ]
