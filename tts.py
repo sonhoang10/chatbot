@@ -72,11 +72,11 @@ def openai_chat_send(transcript):
         {"role": "user", "content": transcript}
     ]
     print("Transcript:", transcript)
-    completion = openai.ChatCompletion.create(
+    completion = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages
     )
-    return completion.choices[0].message["content"]
+    return completion.choices[0].message.content
 
 def record_response(question, response):
     timestamp = datetime.now().isoformat()
