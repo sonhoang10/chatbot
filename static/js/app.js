@@ -17,67 +17,7 @@ recognition.lang = "vi-VN";
 
 
 
-
-function SetupAudio(){
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
-        navigator.mediaDevices
-            .getUserMedia({
-                audio: true
-            })
-            .then(SetupStream)
-            .catch(err => {
-                console.error(err)
-            });
-    }
-}
-
-
-function SetupStream(stream){
-    recorder = new MediaRecorder(stream, {mineType: 'audio/wav'});
-    recorder.mimeType = 'audio/wav';
-    recorder.ondataavailable = e => {
-        chunks.push(e.data);
-    }
-
-    recorder.onstop = e => {
-        debugger
-        const audioBlob = new Blob(chunks, { type: "audio/wav" })
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-
-       // var data = new FormData()
-       // data.append('file', audioUrl , 'text.txt')
-
-        // fetch('http://127.0.0.1:5000/audio', {
-        //     method: 'POST',
-        //     body: {
-        //         data: {
-        //             audio_url: audioUrl
-        //         }
-        //     }
-  
-        // })
-        // let setting = 
-        // $.ajax({url: "http://127.0.0.1:5000/audio", })
-
-        var settings = {
-            type: "POST",
-            processData: true,
-            data: {
-                audio_url: audioUrl,
-            },
-            contenttype: "application/json",
-        }
-        $.ajax('http://127.0.0.1:5000/audio', settings).then(function(response) {
-
-        });
-        stream.getTracks()
-            .forEach( track => track.stop() );
-    }
-
-}
-
-recognition.addEventListener('result', e => {
+recognition.addEventListener('result', e => { //updates the input
     console.log(e.results)
     const transcript = Array.from(e.results)
         .map(result => result[0])
@@ -88,17 +28,21 @@ recognition.addEventListener('result', e => {
 
     });
 
-recognition.addEventListener('end', () => {
+
+recognition.addEventListener('end', () => { //changes the color of mic when ending
     button.style.backgroundColor = '#cccccc'
     active = false
  });
 
- recognition.addEventListener('start', () => {
+ recognition.addEventListener('start', () => { //changes the color of mic when starting
     button.style.backgroundColor = 'red'
     active = true
  });
 
-button.addEventListener ('click', () => {
+
+
+
+button.addEventListener ('click', () => { //decides whether or not to stop or start recording depending on active status
     active = !active;
 
 
