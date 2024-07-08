@@ -101,9 +101,26 @@
         margin-top: 10px;
         margin-bottom: 10px;
       }
-
       input[type="submit"]:hover {
         background-color: darkgreen;
+      }
+
+      input[type="button"] {
+        width: 38px;
+        background-color: #cccccc;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      input[type="button"]:active {
+        background-color: rgb(255, 47, 47);
+      }
+      input[type="button"]:hover {
+        background-color: rgb(94, 94, 94);
       }
     </style>
   </head>
@@ -114,6 +131,11 @@
 
         <div class="chat_container"></div>
         <div class="question_line">
+          <input
+            id="microphone"
+            type="button"
+            value="🎙️"
+          />
           <input
             type="text"
             id="questioninput"
@@ -244,5 +266,8 @@
       // }
       // RenderArticle();
     </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   </body>
 </html>
