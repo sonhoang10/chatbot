@@ -1,6 +1,7 @@
 import openai
 import pyttsx3
 import os
+import uuid
 import json
 from datetime import datetime
 from dotenv import load_dotenv
@@ -21,12 +22,20 @@ if os.path.exists(recordings_file):
 else:
     recordings = []
 
+
+
+directory = "AudioFolder"
+parent_dir = "D:/PhuongKhanh/chatbot/"
+path = os.path.join(parent_dir, directory)
+if(os.path.exists(path) == False):
+    os.mkdir(path) 
+
+
 # # Adjectives and nouns to generate random names for voices
 # adjectives = ["beautiful", "sad", "mystical", "serene", "whispering", "gentle", "melancholic"]
 # nouns = ["sea", "love", "dreams", "song", "rain", "sunrise", "silence", "echo"]
 
 # Initializing pyttsx3 for text-to-speech output
-
 
 def change_voice(engine, language, gender='VoiceGenderFemale'):
     voices = engine.getProperty('voices')
@@ -48,9 +57,12 @@ def speech_to_text(audio_path):
  #tạo file mp3
 def text_to_speech(response):
     engine = pyttsx3.init()
-    engine.save_to_file(response, 'test.mp3')
+    audioId = str(uuid.uuid4())
+    audioFileName = audioId + ".mp3"
+    directory = "AudioFolder/"+ audioFileName
+    engine.save_to_file(response, directory)
     engine.runAndWait()
-    return 'test.mp3'
+    return audioId
 
 # def text_to_speech(response):
 #     text_to_speech = gTTS(text=response) #đọc ra

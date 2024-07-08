@@ -3,6 +3,10 @@
   <head>
     <title>Chatbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
     <style>
       body {
         font-family: Arial, Helvetica, sans-serif;
@@ -66,6 +70,17 @@
         margin: 5px;
       }
 
+      .chatResponse_audio {
+        display: none;
+      }
+
+      .speaker {
+        float: left;
+        clear: both;
+        /* display: block; */
+        margin: 5px 8px;
+      }
+
       input[type="text"] {
         width: 100%;
         padding: 12px;
@@ -96,6 +111,7 @@
     <div class="form_format">
       <div class="container">
         <h2>puka chatbot</h2>
+
         <div class="chat_container"></div>
         <div class="question_line">
           <input
@@ -144,20 +160,41 @@
       function onAppendBotChat(data) {
         var chat_container = document.querySelector(".chat_container");
 
-        var chatResponse_text = document.createElement("p");
-        chatResponse_text.classList.add("chat-response");
-        chatResponse_text.innerText =
-          data.response_text || "không tìm thấy kết quả";
-        chat_container.appendChild(chatResponse_text);
+        var chatResponse = document.createElement("p");
+        chatResponse.classList.add("chat-response");
+
+        var chatResponse_text = document.createElement("span");
+        chatResponse.innerText = data.response_text || "không tìm thấy kết quả";
+        chat_container.appendChild(chatResponse);
 
         if (!data.response_audio === false) {
           var chatResponse_audio = document.createElement("audio");
           chatResponse_audio.controls = "controls";
-          chat_container.appendChild(chatResponse_audio);
+          chatResponse_audio.classList.add("chatResponse_audio"); //tạo tên class để chỉnh css display none ở trên: che nguyên khung mp3, thay bằng ô speaker nhỏ
 
+          // chat_container.appendChild(chatResponse_audio);
           var audio_source = document.createElement("source");
-          audio_source.src = "/mp3";
+          audio_source.src = "/mp3/" + data.response_audio;
           chatResponse_audio.appendChild(audio_source);
+
+          var response_icon = document.createElement("i");
+          response_icon.classList.add("fa", "fa-volume-up");
+          response_icon.setAttribute("aria-hidden", "true");
+
+          // tạo element parent (wrap 2 element i và audio)
+          // add event click cho element
+          var speaker = document.createElement("div");
+          speaker.classList.add("speaker");
+          speaker.appendChild(chatResponse_audio);
+          speaker.appendChild(response_icon);
+          chat_container.appendChild(speaker);
+
+          response_icon.addEventListener("click", function () {
+            chatResponse_audio.play();
+            // chatResponse.appendChild(chatResponse_text);
+            // chatResponse.parentElement.appendChild(response_icon);
+            // chatResponse_audio.appendChild(audio_source);
+          });
         }
       }
 
