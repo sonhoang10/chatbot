@@ -1,0 +1,211 @@
+/* Importing Inter Font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+body {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  justify-content: center;
+  min-height: 100vh;
+  background: #04aa6d;
+}
+.file-uploader {
+  width: 500px;
+  height: 200px;
+  background: #fff;
+  border-radius: 5px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+.file-uploader .uploader-header {
+  display: flex;
+  padding: 20px;
+  background: #EEF1FB;
+  align-items: center;
+  border-radius: 5px 5px 0 0;
+  justify-content: space-between;
+}
+.uploader-header .uploader-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.uploader-header .file-completed-status {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+.file-uploader .file-list {
+  list-style: none;
+  width: 100%;
+  padding-bottom: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-color: #999 transparent;
+  scrollbar-width: thin;
+}
+.file-uploader .file-list:has(li) {
+  padding: 20px;
+}
+.file-list {
+  list-style: none;
+  padding: 0;
+  max-height: 400px; /* Set maximum height */
+  overflow-y: auto; /* Enable vertical scrolling */
+  margin-top: 20px; /* Add margin-top for spacing */
+}
+.file-list .file-item {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 22px;
+  background-color: #fff; /* Add your desired background color */
+  padding: 15px; /* Adjust padding as needed */
+  border-radius: 8px; /* Add border radius for rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Add box-shadow for depth */
+}
+.file-list .file-item:last-child {
+  margin-bottom: 0px;
+}
+.file-list .file-item .file-extension {
+  height: 50px;
+  width: 50px;
+  color: #fff;
+  display: flex;
+  text-transform: uppercase;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  background: #04aa6d;
+}
+.file-list .file-item .file-content-wrapper {
+  flex: 1;
+}
+.file-list .file-item .file-content {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}
+.file-list .file-item .file-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.file-list .file-item .file-info {
+  display: flex;
+  gap: 5px;
+}
+.file-list .file-item .file-info small {
+  color: #5c5c5c;
+  margin-top: 5px;
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.file-list .file-item .file-info .file-status {
+  color: #04aa6d;
+}
+.file-list .file-item .cancel-button {
+  align-self: center;
+  border: none;
+  outline: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+}
+.file-list .file-item .cancel-button:hover {
+  color: #E3413F;
+}
+.file-list .file-item .file-progress-bar {
+  width: 100%;
+  height: 3px;
+  margin-top: 10px;
+  border-radius: 30px;
+  background: #d9d9d9;
+}
+.file-list .file-item .file-progress-bar .file-progress {
+  width: 0%;
+  height: inherit;
+  border-radius: inherit;
+  background: #04aa6d;
+}
+
+.file-item.uploading .file-status {
+  color: #FF9900; /* Color for uploading status */
+}
+
+.file-item.completed .file-status {
+  color: #00B125; /* Color for completed status */
+}
+
+.file-progress-bar {
+  display: none;
+}
+
+.file-item.uploading .file-progress-bar {
+  display: block;
+}
+
+.file-uploader .file-upload-box {
+  margin: 10px 20px 20px;
+  border-radius: 5px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #B1ADD4;
+  transition: all 0.2s ease;
+}
+.file-uploader .file-upload-box.active {
+  border: 2px solid #04aa6d;
+  background: #F3F6FF;
+}
+.file-uploader .file-upload-box .box-title {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #626161;
+}
+.file-uploader .file-upload-box.active .box-title {
+  pointer-events: none;
+}
+.file-upload-box .box-title .file-browse-button {
+  color: #3366CC;
+  cursor: pointer;
+}
+.file-upload-box .box-title .file-browse-button:hover {
+ text-decoration: underline;
+}
+
+.upload-button {
+    background-color: #007BFF; /* Example button color */
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.upload-button:hover {
+    background-color: #0056b3; /* Example hover color */
+}
+.cancel-button {
+  background: transparent;
+  border: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.cancel-button:active {
+  background-color: rgba(0, 0, 0, 0.2);
+}

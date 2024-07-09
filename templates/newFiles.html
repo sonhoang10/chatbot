@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Uploader</title>
+    <link rel="stylesheet" href="../static/css/newfiles.css">
+    <!-- Linking Box Icon for Icons -->
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+    <script src="../static/js/files.js" defer></script>
+  </head>
+  <body>
+    <div class = "stacker">
+      <div class="file-uploader">
+        <div class="uploader-header">
+          <h2 class="uploader-title">File Uploader</h2>
+          <h4 class="file-completed-status"></h4>
+        </div>
+        <div class="file-upload-box">
+          <h2 class="box-title">
+            <span class="file-instruction">Drag files here or</span>
+            <span class="file-browse-button">browse</span>
+          </h2>
+          <input class="file-browse-input" type="file" multiple hidden>
+        </div>
+      </div>
+      <div class = button>
+        <button class="upload-button">Refresh Database</button>
+      </div>
+    </div>
+      <ul class="file-list"></ul>
+  </body>
+</html>

@@ -3,3 +3,6 @@
 /voices
 /AudioFolder
 /__pycache
+/chroma_db
+/node_modules
+/faiss_index
