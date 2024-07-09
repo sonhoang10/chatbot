@@ -24,12 +24,12 @@ else:
 
 
 
+script_dir = os.path.dirname(os.path.realpath(__file__))
 directory = "AudioFolder"
-parent_dir = "D:/PhuongKhanh/chatbot/"
-path = os.path.join(parent_dir, directory)
-if(os.path.exists(path) == False):
-    os.mkdir(path) 
-
+# Create the full path
+path = os.path.join(script_dir, directory)
+if not os.path.exists(path):
+    os.mkdir(path)
 
 # # Adjectives and nouns to generate random names for voices
 # adjectives = ["beautiful", "sad", "mystical", "serene", "whispering", "gentle", "melancholic"]
