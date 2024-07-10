@@ -19,7 +19,9 @@ def chatbot():
         question = data.get('question')
         
         # Generate a response using OpenAI
-        response_text = openai_chat_send(question) #import hàm openai_chat_send từ file tts
+        #response_text = openai_chat_send(question) #import hàm openai_chat_send từ file tts
+        #get respose text from vectorDB
+        response_text = vectorDB.chat(question, sessionID)
         print("OpenAI response:", response_text)
         # Convert response to speech
         response_audio = text_to_speech(response_text)
@@ -35,6 +37,18 @@ def mp3(id):
 
 #setting up drops
 basedir = os.path.abspath(os.path.dirname(__file__))
+if not os.path.exists(os.path.join(basedir, 'sessions\\')):
+    os.makedirs(os.path.join(basedir, 'sessions\\'))
+#update the basedir to basedir/sessions/session_id/uploads folder
+sessionID = 'abc123'#replace this with the session id
+sessions = 'sessions\\' + sessionID
+basedir = os.path.join(basedir, sessions)
+#check if directories exist, if not create them
+if not os.path.exists(basedir):
+    os.makedirs(basedir)
+if not os.path.exists(os.path.join(basedir, '\\uploads')):
+    os.makedirs(os.path.join(basedir, '\\uploads'))
+
 
 app.config.update(
     UPLOADED_PATH=os.path.join(basedir, 'uploads'),
@@ -46,6 +60,9 @@ app.config.update(
 
 @app.route('/files', methods=['GET', 'POST'])
 def upload():
+    #check if directories exist, if not create them
+    if not os.path.exists(basedir):
+        os.makedirs(basedir)
     if request.method == 'POST':
         f = request.files.get('file')
         if f:
@@ -57,6 +74,9 @@ def upload():
 
 @app.route('/files/list', methods=['GET'])
 def list_files():
+    #check if app confight uploade path exists, if not create it
+    if not os.path.exists(app.config['UPLOADED_PATH']):
+        os.makedirs(app.config['UPLOADED_PATH'])
     files = []
     for filename in os.listdir(app.config['UPLOADED_PATH']):
         file_path = os.path.join(app.config['UPLOADED_PATH'], filename)
@@ -80,6 +100,16 @@ def delete_file():
 
     os.remove(file_path)
     return jsonify({"message": "File deleted successfully"}), 200
+
+@app.route('/files/chatLoader', methods=['POST'])
+def chatLoader():
+    filepath = basedir + '\\uploads'
+    try:
+        vectorDB.deleteSession(sessionID)
+    except:
+        pass
+    vectorDB.embedAllInDirectiory(filepath, sessionID)
+    return jsonify({'message': 'Files uploaded to VectorDB!'})
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -3,6 +3,7 @@ const fileBrowseButton = document.querySelector(".file-browse-button");
 const fileBrowseInput = document.querySelector(".file-browse-input");
 const fileUploadBox = document.querySelector(".file-upload-box");
 const fileCompletedStatus = document.querySelector(".file-completed-status");
+const refreshButton = document.querySelector('.upload-button');
 let totalFiles = 0;
 let completedFiles = 0;
 // Function to create HTML for each file item
@@ -70,6 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
+
+    if (refreshButton) {
+        refreshButton.addEventListener('click', loadFilesToChat);
+    }
 });
 
 //function to fetch files on the server
@@ -163,6 +168,38 @@ const handleFileDeletion = (filename, fileItemElement) => {
         alert('An error occurred while trying to delete the file.');
     });
 };
+
+//function to load all files into vectorDB
+function loadFilesToChat() {
+    fetch('/files/chatLoader', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message);
+            // You can update the UI or perform any other operations here
+            showPopup('Database reloaded');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showPopup('An error occurred while trying to reload the database');
+        });
+}
+
+function showPopup(message) {
+    // Create the popup element
+    const popup = document.createElement('div');
+    popup.className = 'popup-message';
+    popup.textContent = message;
+
+    // Append the popup to the body
+    document.body.appendChild(popup);
+
+    // Automatically remove the popup after 3 seconds
+    setTimeout(() => {
+        popup.remove();
+    }, 3000);
+}
+
+
 // Function to handle file drop event
 fileUploadBox.addEventListener("drop", (e) => {
     e.preventDefault();

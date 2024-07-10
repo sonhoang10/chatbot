@@ -120,11 +120,12 @@ def chatResponse(chain, question, sessionID):
     )["answer"]
     return(response)
 
-def deleteSession(sessionID):
-    sessionDir = setup_session_dir(sessionID)
-    shutil.rmtree(sessionDir)
+def deleteSession(sessionID = "abc123"):
+    db = Chroma.from_texts([], persist_directory=sessionID, embedding=OpenAIEmbeddings())
+    db.reset()
 
-def embed(file_path, sessionID):
+
+def embed(file_path, sessionID = "abc123"):
     text = readFile(file_path)
     chunks = createChunks(text)
     db = vectorStorage(chunks, sessionID)
@@ -141,7 +142,10 @@ def embedAllInDirectiory(directory, sessionID):
     
 def chat (question, sessionID = "abc123"):
     sessionDir = setup_session_dir(sessionID)
-    db = Chroma(persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
+    try:
+        db = Chroma(persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
+    except:
+        db = Chroma.from_texts([], persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
     chain = createChain(db)
     response = chatResponse(chain, question, sessionID)
     return response
@@ -149,7 +153,7 @@ def chat (question, sessionID = "abc123"):
 ### example usage ###
 # deleteSession("abc123")
 # embedAllInDirectiory("filetypes", "abc123")
-# print(chat("What is the spy's name?"))
+#print(chat("Tell me about Elon Musk"))
 # print(chat("What word echohe through elara's mind?"))
 # print(chat("What is the spy's name?"))
 # print(chat("What word echohe through elara's mind?"))

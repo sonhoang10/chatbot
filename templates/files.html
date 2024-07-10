@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {{ dropzone.load_css() }}
+    {{ dropzone.style('border: 2px dashed #0087F7; min-height: 40px;') }}
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      .form_format {
+        background-color: white;
+        display: flex;
+        justify-content: center;
+      }
+
+      .container {
+        width: 40%;
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+      }
+
+      .fileContainer {
+        width: 40%;
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+      }
+
+
+      input[type="button"] {
+        width: 38px;
+        background-color: #cccccc;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      input[type="button"]:active {
+        background-color: rgb(255, 47, 47);
+      }
+      input[type="button"]:hover {
+        background-color: rgb(94, 94, 94);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form_format">
+      <div class="fileContainer">
+        <h2>Upload Files here</h2>
+        <div class="file_container">
+          <p></p>
+          {{ dropzone.create(action='upload', id='foo') }}
+          {{ dropzone.load_js() }}
+          {{ dropzone.config(id='foo') }}
+
+        </div>
+      </div> 
+
+    </div>
+    <script>
+
+    </script>
+    <script src="{{ url_for('static', filename='js/doccumentUploader.js') }}"></script>
+  </body>
+</html>
