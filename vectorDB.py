@@ -1,33 +1,37 @@
 import os
 import textParser
 import openai
-import json
 from dotenv import load_dotenv
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.tools.retriever import create_retriever_tool
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_chroma import Chroma
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain_community.document_loaders import TextLoader
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
-from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.prebuilt import create_react_agent
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.document_loaders import DirectoryLoader
+import shutil
 
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 openai.api_key = api_key
 
+def setup_session_dir(session_id):
+    # Get the current working directory
+    base_dir = os.getcwd()
+    # Create the session directory path within the current working directory
+    session_dir = os.path.normpath(os.path.join(base_dir, 'sessions', session_id))
+    # Create the directory if it does not exist
+    if not os.path.exists(session_dir):
+        os.makedirs(session_dir)
+    return session_dir
+
 def readFile(file_path): #reads file
-    loader = TextLoader(file_path)
-    documents = loader.load()
-    return documents
+    doccuments = textParser.extract_text(file_path)
+    return doccuments
 
 def createChunks(text): #appends files to vectorDB
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
@@ -42,6 +46,8 @@ def vectorStorage(chunks, sessionID):
     db = Chroma.from_documents(chunks, embeddings_function, persist_directory=sessionDir)
     #retriever = db.as_retriever()
     return db
+
+
     
 def createChain(db):
     retriever = db.as_retriever()
@@ -88,14 +94,16 @@ def createChain(db):
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
     return rag_chain
 
-def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    if session_id not in store:
-        store[session_id] = ChatMessageHistory()
-    return store[session_id]
+def chatResponse(chain, question, sessionID):
+    store = {}
 
 
+    def get_session_history(session_id: str) -> BaseChatMessageHistory:
+        if session_id not in store:
+            store[session_id] = ChatMessageHistory()
+        return store[session_id]
 
-def chatResponse(question,chain,sessionID): #Embeds vectorDB into OpenAI
+
     conversational_rag_chain = RunnableWithMessageHistory(
         chain,
         get_session_history,
@@ -110,66 +118,38 @@ def chatResponse(question,chain,sessionID): #Embeds vectorDB into OpenAI
             "configurable": {"session_id": sessionID}
         },  # constructs a key "abc123" in `store`.
     )["answer"]
-    return response
+    return(response)
 
-def setup_session_dir(session_id):
-    session_dir = os.path.join('/sessions', session_id)
-    if not os.path.exists(session_dir):
-        os.makedirs(session_dir)
-    return session_dir
+def deleteSession(sessionID):
+    sessionDir = setup_session_dir(sessionID)
+    shutil.rmtree(sessionDir)
 
 def embed(file_path, sessionID):
-    text = textParser.extract_text(file_path)
+    text = readFile(file_path)
     chunks = createChunks(text)
-    vectors = vectorStorage(chunks, sessionID)
-    #print("finished")
+    db = vectorStorage(chunks, sessionID)
 
-def chat(question, sessionID):
-    session_dir = setup_session_dir(sessionID)
-    store_path = os.path.join(session_dir, 'chain_store.json')
-    if not os.path.exists(store_path):
-        raise ValueError("Session ID not found. Please embed a file first.")
-    chain = createChain(vectorStorage([], sessionID))  # Reload the vector DB and chain
-    return chatResponse(question, chain, sessionID)
+def embedAllInDirectiory(directory, sessionID):
+    base_dir = os.getcwd()
+    directory = os.path.normpath(os.path.join(base_dir, directory))
+    list_extensions = [".pdf", ".txt", ".ppt", "pptx", "doc", "docx"]
+    list_globs = [f"**/*{ext}" for ext in list_extensions]
+    loader = DirectoryLoader(path = directory, glob = list_globs)
+    docs = loader.load()
+    chunks = createChunks(docs)
+    db = vectorStorage(chunks, sessionID)
+    
+def chat (question, sessionID = "abc123"):
+    sessionDir = setup_session_dir(sessionID)
+    db = Chroma(persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
+    chain = createChain(db)
+    response = chatResponse(chain, question, sessionID)
+    return response
 
-def destroy(sessionID):
-    session_dir = setup_session_dir(sessionID)
-    if os.path.exists(session_dir):
-        for root, dirs, files in os.walk(session_dir, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir(session_dir)
-    return "Session destroyed."
-
-# def saveVectorDB(vectors, path):
-#     vectors.save_local(path)
-
-# def loadVectorDB(path):
-#     embeddings = embedding_functions.OpenAIEmbeddingFunction(
-#                 api_key=os.getenv("OPENAI_API_KEY"),
-#                 model_name="text-embedding-3-small"
-#             )
-#     vectors = FAISS.load_local(path, embeddings, allow_dangerous_deserialization = True)
-#     return vectors
-
-def mergeVectorDB(db1,db2):
-    db1.merge_from(db2)
-    return db1
-
-###test usage
-#store = {}
-# question = 'What is the name of the main character?'
-# file_path = 'tesla.txt'
-# text = readFile(file_path)
-# chunks = createChunks(text)
-# vectors = vectorStorage(chunks)
-# chain = createChain(vectors)
-# print(chatResponse(question, chain, "abc123"))
-#(embed('filetypes/tesla.txt', "abc123"))
-
-# Uncomment these lines to test saving and loading the vector DB
-# saveVectorDB(vectors, "faiss_index")
-# vectors = loadVectorDB('faiss_index')
-# print(chat(question, vectors))
+### example usage ###
+# deleteSession("abc123")
+# embedAllInDirectiory("filetypes", "abc123")
+# print(chat("What is the spy's name?"))
+# print(chat("What word echohe through elara's mind?"))
+# print(chat("What is the spy's name?"))
+# print(chat("What word echohe through elara's mind?"))
