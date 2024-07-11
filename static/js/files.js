@@ -165,6 +165,7 @@ function loadFilesToChat(_callback) {
         .catch(error => {
             console.error('Error:', error);
             showPopup('An error occurred while trying to reload the database', '#E3413F');
+            _callback();
         });
 }
 
@@ -179,6 +180,7 @@ function resetChat(_callback) {
         .catch(error => {
             console.error('Error:', error);
             showPopup('An error occurred while trying to reset chat', '#E3413F');
+            _callback();
         });
     //callback
     _callback();
