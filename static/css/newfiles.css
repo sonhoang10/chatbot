@@ -51,18 +51,54 @@ body {
 .file-uploader .file-list:has(li) {
   padding: 20px;
 }
+.stacker {
+  margin-right: 20px;
+}
+.file-list-container {
+  width: 400px;
+  height: 500px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-list-container .list-header {
+  display: flex;
+  padding: 20px;
+  background: #EEF1FB;
+  align-items: center;
+  border-radius: 10px 10px 0 0;
+  justify-content: space-between;
+}
+.file-list-container .list-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.file-list-container .file-list {
+  padding: 20px; /* Ensure padding inside the file-list-container */
+  max-height: 450px; /* Adjust the height based on header or other elements */
+  align-self: center;
+}
+
 .file-list {
   list-style: none;
   padding: 0;
+  border-radius: 15px ;
   max-height: 400px; /* Set maximum height */
+  max-width: 400px;
   overflow-y: auto; /* Enable vertical scrolling */
-  margin-top: 20px; /* Add margin-top for spacing */
+  flex-grow: 1;
 }
 .file-list .file-item {
   display: flex;
   gap: 14px;
   margin-bottom: 22px;
-  background-color: #fff; /* Add your desired background color */
+  background-color: #e7e7e7; /* Add your desired background color */
   padding: 15px; /* Adjust padding as needed */
   border-radius: 8px; /* Add border radius for rounded corners */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Add box-shadow for depth */
