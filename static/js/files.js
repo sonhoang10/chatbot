@@ -110,15 +110,16 @@ const handleSelectedFiles = ([...files]) => {
         xhr.addEventListener("readystatechange", () => {
             if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 completedFiles++;
-                cancelFileUploadButton.remove();
                 updateFileStatus("Completed", "#00B125");
+                currentFileItem.classList.remove('uploading');
+                currentFileItem.classList.add('completed');
+                currentFileItem.querySelector(".file-size").innerText = currentFileItem.querySelector(".file-size").innerText.split("/")[1].trim();
                 updateFileCompletedStatus();
             }
         });
         cancelFileUploadButton.addEventListener("click", () => {
             xhr.abort();
-            updateFileStatus("Cancelled", "#E3413F");
-            cancelFileUploadButton.remove();
+            currentFileItem.remove();
         });
     });
     updateFileCompletedStatus();
