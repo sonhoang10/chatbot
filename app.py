@@ -116,7 +116,10 @@ def chatbot():
 def audioReturn():
     data = request.get_json()
     answer = data.get('answer')
-    directory = basedir + '\\AudioFolder\\'
+    directory = basedir + '\\AudioFolder'
+    directory = os.path.normpath(directory)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     id = text_to_speech(answer, directory) #returns audioId of the audio file
     return jsonify({'message': 'Audio file created!', 'audioId': id})
 
@@ -125,7 +128,7 @@ def mp3(id):
         audioFileName = id + ".mp3"
         # directory = "AudioFolder/"+ audioFileName
         # directory = os.path.normpath(directory)
-        directory = os.path.normpath("AudioFolder/" + audioFileName)
+        directory = os.path.normpath(basedir + '\\AudioFolder\\' + audioFileName)
         return send_file(directory, as_attachment=True)
 
 
