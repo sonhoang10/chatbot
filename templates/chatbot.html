@@ -163,10 +163,47 @@
           },
           body: JSON.stringify({ question: question }),
         });
-        data = await response.json();
-        console.log("Response from server:", data);
-        onAppendBotChat(data);
-        scrollToBottom();
+
+        let accumulatedResponse = '';
+        let audioFileName = null;
+
+        if (response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+
+          while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            if (value) {
+              const chunk = decoder.decode(value, { stream: true });
+              console.log("Raw chunk from server:", chunk);
+
+              // Process each line separately in case of multiple events in one chunk
+              const lines = chunk.split("\n\n");
+              for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                  const jsonChunk = line.slice(6); // Remove 'data: ' prefix
+                  try {
+                    const parsedData = JSON.parse(jsonChunk);
+                    console.log("Response from server:", parsedData);
+                    onAppendBotChat(parsedData.content);
+                    accumulatedResponse += parsedData.content;
+                    audioFileName = parsedData.audio_filename;
+                    scrollToBottom();
+                  } catch (e) {
+                    console.error("Failed to parse JSON:", e, "Chunk:", jsonChunk);
+                  }
+                }
+              }
+            }
+            done = readerDone;
+          }
+
+          // Add audio clip after all chunks are received
+          if (accumulatedResponse) {
+            addAudioClip(accumulatedResponse);
+          }
+        }
       }
 
       function onAppendClientChat() {
@@ -179,47 +216,65 @@
         elQuestion.value = "";
       }
 
-      function onAppendBotChat(data) {
+      function onAppendBotChat(content) {
         var chat_container = document.querySelector(".chat_container");
 
-        var chatResponse = document.createElement("p");
-        chatResponse.classList.add("chat-response");
+        // Try to find the last chat response to append to
+        var lastChatResponse = chat_container.querySelector(".chat-response:last-child");
 
-        var chatResponse_text = document.createElement("span");
-        chatResponse.innerText = data.response_text || "không tìm thấy kết quả";
-        chat_container.appendChild(chatResponse);
+        if (lastChatResponse) {
+          // Append new content to the existing response
+          lastChatResponse.querySelector("span").innerText += content;
+        } else {
+          // If no existing response, create a new one
+          var chatResponse = document.createElement("p");
+          chatResponse.classList.add("chat-response");
 
-        if (!data.response_audio === false) {
-          var chatResponse_audio = document.createElement("audio");
-          chatResponse_audio.controls = "controls";
-          chatResponse_audio.classList.add("chatResponse_audio"); //tạo tên class để chỉnh css display none ở trên: che nguyên khung mp3, thay bằng ô speaker nhỏ
-
-          // chat_container.appendChild(chatResponse_audio);
-          var audio_source = document.createElement("source");
-          audio_source.src = "/mp3/" + data.response_audio;
-          chatResponse_audio.appendChild(audio_source);
-
-          var response_icon = document.createElement("i");
-          response_icon.classList.add("fa", "fa-volume-up");
-          response_icon.setAttribute("aria-hidden", "true");
-
-          // tạo element parent (wrap 2 element i và audio)
-          // add event click cho element
-          var speaker = document.createElement("div");
-          speaker.classList.add("speaker");
-          speaker.appendChild(chatResponse_audio);
-          speaker.appendChild(response_icon);
-          chat_container.appendChild(speaker);
-
-          response_icon.addEventListener("click", function () {
-            chatResponse_audio.play();
-            // chatResponse.appendChild(chatResponse_text);
-            // chatResponse.parentElement.appendChild(response_icon);
-            // chatResponse_audio.appendChild(audio_source);
-          });
+          var chatResponse_text = document.createElement("span");
+          chatResponse_text.innerText = content || "";
+          chatResponse.appendChild(chatResponse_text);
+          chat_container.appendChild(chatResponse);
         }
       }
 
+        async function addAudioClip(answer) {
+          const response = await fetch('/tts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ answer: answer }),
+          });
+
+          const data = await response.json();
+          const audioId = data.audioId;
+
+          if (audioId) {
+            var chat_container = document.querySelector(".chat_container");
+
+            var chatResponse_audio = document.createElement("audio");
+            chatResponse_audio.controls = "controls";
+            chatResponse_audio.classList.add("chatResponse_audio")
+
+            var audio_source = document.createElement("source");
+            audio_source.src = "/mp3/" + audioId;
+            chatResponse_audio.appendChild(audio_source);
+
+            var response_icon = document.createElement("i");
+            response_icon.classList.add("fa", "fa-volume-up");
+            response_icon.setAttribute("aria-hidden", "true");
+
+            var speaker = document.createElement("div");
+            speaker.classList.add("speaker");
+            speaker.appendChild(chatResponse_audio);
+            speaker.appendChild(response_icon);
+            chat_container.appendChild(speaker);
+
+            response_icon.addEventListener("click", function () {
+              chatResponse_audio.play();
+            });
+          }
+        }
       //khung chat tự động scroll down khi nhập question mới
       function scrollToBottom() {
         var chat_container = document.querySelector(".chat_container");

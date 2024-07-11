@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader
 import shutil
-
+import asyncio
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -138,7 +138,6 @@ def chat_history_as_txt(session_id='abc123'):
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
         return load_chat_history(session_id)
     
-
 def chatResponseChain(chain):
 
     conversational_rag_chain = RunnableWithMessageHistory(
@@ -151,19 +150,25 @@ def chatResponseChain(chain):
 
     return conversational_rag_chain
 
-def chatResponse(chain, question, sessionID):
-    response = chain.invoke(
+async def chatResponse(chain, question, sessionID):
+    response = ""
+    async for s in chain.astream(
         {"input": question},
         config={
             "configurable": {"session_id": sessionID}
         },  # constructs a key "abc123" in `store`.
-    )["answer"]
+    ):
+        try:
+            chunk = s['answer']
+            response += chunk
+            yield chunk  # Yield each chunk instead of accumulating the entire response
+        except KeyError:
+            pass
     chat_history = get_session_history(sessionID)
     chat_history.add_user_message(question)
     chat_history.add_ai_message(response)
     
     save_chat_history(chat_history, sessionID)
-    return(response)
 
 def deleteSession(sessionID = "abc123"):
     basedir = setup_session_dir(sessionID)
@@ -184,7 +189,6 @@ def deleteSession(sessionID = "abc123"):
         except:
             shutil.rmtree(chat_history_path)
 
-
 def embed(file_path, sessionID = "abc123"):
     text = readFile(file_path)
     chunks = createChunks(text)
@@ -202,25 +206,31 @@ def embedAllInDirectiory(directory, sessionID):
     docs = loader.load()
     chunks = createChunks(docs)
     db = vectorStorage(chunks, sessionID)
-    
-def chat (question, sessionID = "abc123"):
+
+async def chat(question, sessionID = "abc123", ragChain = None):
     sessionDir = setup_session_dir(sessionID)
     try:
         db = Chroma(persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
     except:
         db = Chroma.from_texts([], persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
     chain = createChain(db)
-    if sessionID in store:
-        ragChain = store[sessionID]
-    else: 
-        ragChain = chatResponseChain(chain)
-    store[sessionID] = ragChain
-    response = chatResponse(ragChain, question, sessionID)
-    return response
+    if ragChain is None:
+        if sessionID in store:
+            ragChain = store[sessionID]
+        else:
+            ragChain = chatResponseChain(chain)
+        store[sessionID] = ragChain
+
+    async for chunk in chatResponse(ragChain, question, sessionID):
+        yield chunk
+
 
 store = {}
-### example usage ###
-#deleteSession("abc123")
-#embedAllInDirectiory("resume.pdf", "abc123")
-#embed("resume.pdf")
-#print(chat("What was my last question exactly?"))
+
+# Main function to run the async chat function
+#async def main():
+#    async for value in chat("What is the capital of France?"):
+#        print(value)
+
+# Run the main function in the event loop
+#asyncio.run(main())
