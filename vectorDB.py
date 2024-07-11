@@ -2,6 +2,7 @@ import os
 import textParser
 import openai
 from dotenv import load_dotenv
+import json
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_chroma import Chroma
 from langchain_community.chat_message_histories import ChatMessageHistory
@@ -94,15 +95,51 @@ def createChain(db):
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
     return rag_chain
 
-def chatResponse(chain, question, sessionID):
-    store = {}
+def save_chat_history(chat_history,session_id='abc123'):
+    session_dir = setup_session_dir(session_id)
+    history_path = os.path.join(session_dir, "chat_history.json")
+    with open(history_path, 'w') as file:
+        json.dump([message.dict() for message in chat_history.messages], file)
 
+def load_chat_history(session_id='abc123'):
+    session_dir = setup_session_dir(session_id)
+    history_path = os.path.join(session_dir, "chat_history.json")
+    chat_history = ChatMessageHistory()
 
-    def get_session_history(session_id: str) -> BaseChatMessageHistory:
-        if session_id not in store:
-            store[session_id] = ChatMessageHistory()
-        return store[session_id]
+    if os.path.exists(history_path):
+        with open(history_path, 'r') as file:
+            messages = json.load(file)
+            for msg in messages:
+                if msg["type"] == "human":
+                    chat_history.add_user_message((msg["content"]))
+                elif msg["type"] == "ai":
+                    chat_history.add_ai_message(msg["content"])
+    
+    return chat_history
 
+def chat_history_as_txt(session_id='abc123'):
+    session_dir = setup_session_dir(session_id)
+    history_path = os.path.join(session_dir, "chat_history.json")
+    #create an output doccument
+    output_path = os.path.join(session_dir, "chat_history.txt")
+
+    if os.path.exists(history_path):
+        with open(history_path, 'r') as file:
+            messages = json.load(file)
+            for msg in messages:
+                if msg["type"] == "human":
+                    with open(output_path, 'a') as output_file:
+                        output_file.write(f"User: {msg['content']}\n")
+                elif msg["type"] == "ai":
+                    with open(output_path, 'a') as output_file:
+                        output_file.write(f"AI: {msg['content']}\n")
+    return output_path
+
+def get_session_history(session_id: str) -> BaseChatMessageHistory:
+        return load_chat_history(session_id)
+    
+
+def chatResponseChain(chain):
 
     conversational_rag_chain = RunnableWithMessageHistory(
         chain,
@@ -112,23 +149,49 @@ def chatResponse(chain, question, sessionID):
         output_messages_key="answer",
     )
 
-    response = conversational_rag_chain.invoke(
+    return conversational_rag_chain
+
+def chatResponse(chain, question, sessionID):
+    response = chain.invoke(
         {"input": question},
         config={
             "configurable": {"session_id": sessionID}
         },  # constructs a key "abc123" in `store`.
     )["answer"]
+    chat_history = get_session_history(sessionID)
+    chat_history.add_user_message(question)
+    chat_history.add_ai_message(response)
+    
+    save_chat_history(chat_history, sessionID)
     return(response)
 
 def deleteSession(sessionID = "abc123"):
-    db = Chroma.from_texts([], persist_directory=sessionID, embedding=OpenAIEmbeddings())
-    db.reset()
+    basedir = setup_session_dir(sessionID)
+    try:
+        try:
+            db = Chroma.from_texts([], persist_directory=basedir, embedding=OpenAIEmbeddings())
+        except:
+            db = Chroma(persist_directory=basedir, embedding_function=OpenAIEmbeddings())
+        db.reset()
+        
+    except:
+        pass
+    #delete chat_history.json in session/sessionID folder
+    chat_history_path = os.path.join(basedir, "chat_history.json")
+    if os.path.exists(chat_history_path):
+        try:
+            os.remove(chat_history_path)
+        except:
+            shutil.rmtree(chat_history_path)
 
 
 def embed(file_path, sessionID = "abc123"):
     text = readFile(file_path)
     chunks = createChunks(text)
     db = vectorStorage(chunks, sessionID)
+    chain = createChain(db)
+    ragChain = chatResponseChain(chain)
+    store[sessionID] = ragChain
 
 def embedAllInDirectiory(directory, sessionID):
     base_dir = os.getcwd()
@@ -147,13 +210,17 @@ def chat (question, sessionID = "abc123"):
     except:
         db = Chroma.from_texts([], persist_directory=sessionDir, embedding_function=OpenAIEmbeddings())
     chain = createChain(db)
-    response = chatResponse(chain, question, sessionID)
+    if sessionID in store:
+        ragChain = store[sessionID]
+    else: 
+        ragChain = chatResponseChain(chain)
+    store[sessionID] = ragChain
+    response = chatResponse(ragChain, question, sessionID)
     return response
 
+store = {}
 ### example usage ###
-# deleteSession("abc123")
-# embedAllInDirectiory("filetypes", "abc123")
-#print(chat("Tell me about Elon Musk"))
-# print(chat("What word echohe through elara's mind?"))
-# print(chat("What is the spy's name?"))
-# print(chat("What word echohe through elara's mind?"))
+#deleteSession("abc123")
+#embedAllInDirectiory("resume.pdf", "abc123")
+#embed("resume.pdf")
+#print(chat("What was my last question exactly?"))
