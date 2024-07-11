@@ -4,6 +4,10 @@ const fileBrowseInput = document.querySelector(".file-browse-input");
 const fileUploadBox = document.querySelector(".file-upload-box");
 const fileCompletedStatus = document.querySelector(".file-completed-status");
 const refreshButton = document.querySelector('.upload-button');
+const downloadButton = document.querySelector('.download-button');
+const resetButton = document.querySelector('.reset-button');
+const testButton = document.querySelector('.test-button');
+
 let totalFiles = 0;
 let completedFiles = 0;
 // Function to create HTML for each file item
@@ -52,30 +56,6 @@ const handleFileUploading = (file, uniqueIdentifier) => {
     
     return xhr;
 };
-
-// Function to handle selected files
-document.addEventListener("DOMContentLoaded", () => {
-    fetchExistingFiles();
-
-    fileList.addEventListener('click', (e) => {
-        const cancelButton = e.target.closest('.cancel-button');
-        if (cancelButton) {
-            const fileItemElement = cancelButton.closest('.file-item');
-            const filename = cancelButton.getAttribute('data-filename'); // Fetch the data-filename directly from the clicked element
-
-            if (filename) {
-                handleFileDeletion(filename, fileItemElement);
-            } else {
-                fileItemElement.remove();// Adjust as needed
-                updateFileCompletedStatus();
-            }
-        }
-    });
-
-    if (refreshButton) {
-        refreshButton.addEventListener('click', loadFilesToChat);
-    }
-});
 
 //function to fetch files on the server
 const fetchExistingFiles = () => {
@@ -170,18 +150,36 @@ const handleFileDeletion = (filename, fileItemElement) => {
 };
 
 //function to load all files into vectorDB
-function loadFilesToChat() {
+function loadFilesToChat(_callback) {
     fetch('/files/chatLoader', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             console.log(data.message);
             // You can update the UI or perform any other operations here
-            showPopup('Database reloaded');
+            showPopup('Database loaded');
+            //callback
+            _callback();
         })
         .catch(error => {
             console.error('Error:', error);
             showPopup('An error occurred while trying to reload the database');
         });
+}
+
+function resetChat(_callback) {
+    fetch('/files/resetChat', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message);
+            // You can update the UI or perform any other operations here
+            showPopup('Chat Reset');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showPopup('An error occurred while trying to reset chat');
+        });
+    //callback
+    _callback();
 }
 
 function showPopup(message) {
@@ -199,6 +197,26 @@ function showPopup(message) {
     }, 3000);
 }
 
+//downloads chat history
+function downloadChatHistory(_callback) {
+
+    fetch('/files/historyDownload',{ method: 'POST' })
+        .then(res=>{
+            return res.blob();
+        }).then(blob=>{
+            download(blob)
+        }).catch(err=>console.log(err));
+    //callback
+    _callback();    
+}
+
+function testFunction(_callback) {
+     // Show loading spinner
+    setTimeout(() => {
+        showPopup('Test completed'); // Hide loading spinner after completion
+        _callback(); // Call the callback function after completion
+    }, 3000);
+}
 
 // Function to handle file drop event
 fileUploadBox.addEventListener("drop", (e) => {
@@ -226,3 +244,59 @@ const updateFileCompletedStatus = () => {
 
 fileBrowseInput.addEventListener("change", (e) => handleSelectedFiles(e.target.files));
 fileBrowseButton.addEventListener("click", () => fileBrowseInput.click());
+
+// Function to handle clicks
+document.addEventListener("DOMContentLoaded", () => {
+    fetchExistingFiles();
+
+    fileList.addEventListener('click', (e) => {
+        const cancelButton = e.target.closest('.cancel-button');
+        if (cancelButton) {
+            const fileItemElement = cancelButton.closest('.file-item');
+            const filename = cancelButton.getAttribute('data-filename'); // Fetch the data-filename directly from the clicked element
+
+            if (filename) {
+                handleFileDeletion(filename, fileItemElement);
+            } else {
+                fileItemElement.remove(); // Adjust as needed
+                updateFileCompletedStatus();
+            }
+        }
+    });
+
+    if (refreshButton) {
+        refreshButton.addEventListener('click', () => {
+            refreshButton.classList.add('loading');
+            loadFilesToChat(function() {
+                refreshButton.classList.remove('loading');
+            });
+        });
+    }
+
+    if (downloadButton) {
+        downloadButton.addEventListener('click', () => {
+            downloadButton.classList.add('loading');
+            downloadChatHistory(function() {
+                downloadButton.classList.remove('loading');
+            });
+        });
+    }
+
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            resetButton.classList.add('loading');
+            resetChat(function() {
+                resetButton.classList.remove('loading');
+            });
+        });
+    }
+
+    if (testButton) {
+        testButton.addEventListener('click', () => {
+            testButton.classList.add('loading');
+            testFunction(function() {
+                testButton.classList.remove('loading');
+            });
+        });
+    }
+});

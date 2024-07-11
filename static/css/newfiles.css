@@ -190,6 +190,75 @@ body {
 .upload-button:hover {
     background-color: #0056b3; /* Example hover color */
 }
+
+.download-button {
+  background-color: #777777; /* Example button color */
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.download-button:hover {
+  background-color: #565656; /* Example hover color */
+}
+
+.reset-button {
+  background-color: #ff0000; /* Example button color */
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.reset-button:hover {
+  background-color: #b30000; /* Example hover color */
+}
+
+.test-button {
+  background-color: #ff0000; /* Example button color */
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.test-button:hover {
+  background-color: #b30000; /* Example hover color */
+}
+
+
+.button-with-spinner {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid #fff;
+  width: 16px;
+  height: 16px;
+  animation: spin 2s linear infinite;
+  position: absolute;
+  right: 10px; /* Adjust to position the spinner within the button */
+  display: none; /* Initially hide the spinner */
+}
+
+.loading .spinner {
+  display: block; /* Display the spinner when .loading class is applied */
+}
+
+.loading {
+  padding-right: 30px; /* Adjust padding when loading to accommodate the spinner */
+}
+
+
 .cancel-button {
   background: transparent;
   border: none;
@@ -213,7 +282,7 @@ body {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background-color: #5cb85c;
+  background-color: #7e7e7e;
   color: white;
   padding: 15px;
   border-radius: 5px;

@@ -8,6 +8,8 @@
     <!-- Linking Box Icon for Icons -->
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
     <script src="../static/js/files.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js"></script>
+    
   </head>
   <body>
     <div class = "stacker">
@@ -25,7 +27,18 @@
         </div>
       </div>
       <div class = button>
-        <button class="upload-button">Refresh Database</button>
+        <button class="upload-button button-with-spinner">
+          Embed Files
+          <div class="spinner"></div>
+        </button>
+        <button class="download-button button-with-spinner">
+          Download History
+          <div class="spinner"></div>
+        </button>
+        <button class="reset-button button-with-spinner">
+          Reset Chat
+          <div class="spinner"></div>
+        </button>
       </div>
     </div>
       <ul class="file-list"></ul>
