@@ -58,8 +58,9 @@ def speech_to_text(audio_path):
 def text_to_speech(response, directory = "AudioFolder/"):
     engine = pyttsx3.init()
     audioId = str(uuid.uuid4())
-    audioFileName = audioId + ".mp3"
+    audioFileName = "//" + audioId + ".mp3"
     directory += audioFileName
+    directory = os.path.normpath(directory)
     engine.save_to_file(response, directory)
     engine.runAndWait()
     return audioId
