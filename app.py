@@ -4,9 +4,8 @@ import openai
 import vectorDB  # import file vectorDB
 import json
 import chatHistoryPrettifier  # makes chat history look nice
-import time
 from dotenv import load_dotenv
-from tts import openai_chat_send, text_to_speech
+from tts import text_to_speech
 import asyncio
 from queue import Queue
 from threading import Thread
@@ -21,14 +20,12 @@ sessionID = 'abc123' #default sessionID
 
 #setting up drops
 def setup_session_dir(sessionID = 'abc123'):
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    basedir = os.path.normpath(basedir)
+    basedir = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sessions\\')) #gets the current directory
     if not os.path.exists(os.path.join(basedir, 'sessions\\')):
         os.makedirs(os.path.join(basedir, 'sessions\\'))
     #update the basedir to basedir/sessions/session_id/uploads folder
     sessions = 'sessions\\' + sessionID
-    basedir = os.path.join(basedir, sessions)
-    basedir = os.path.normpath(basedir)
+    basedir = os.path.normpath(os.path.join(basedir, sessions)) #gets directory of the session
     #check if directories exist, if not create them
     if not os.path.exists(basedir):
         os.makedirs(basedir)
@@ -42,8 +39,9 @@ def setup_session_dir(sessionID = 'abc123'):
         DROPZONE_MAX_FILE_SIZE=3,
         DROPZONE_MAX_FILES=30,
     )
-setup_session_dir("abc123")
-store = {}
+    return basedir
+basedir = setup_session_dir("abc123")
+store = {} #session storage for history
 
 
 
@@ -125,8 +123,9 @@ def audioReturn():
 @app.route('/mp3/<id>', methods=['GET'])
 def mp3(id):
         audioFileName = id + ".mp3"
-        directory = "AudioFolder/"+ audioFileName
-        directory = os.path.normpath(directory)
+        # directory = "AudioFolder/"+ audioFileName
+        # directory = os.path.normpath(directory)
+        directory = os.path.normpath("AudioFolder/" + audioFileName)
         return send_file(directory, as_attachment=True)
 
 
@@ -166,8 +165,7 @@ def delete_file():
     if not filename:
         return jsonify({"error": "Filename not provided"}), 400
 
-    file_path = os.path.join(app.config['UPLOADED_PATH'], filename)
-    file_path = os.path.normpath(file_path)
+    file_path = os.path.normpath(os.path.join(app.config['UPLOADED_PATH'], filename))
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
 
@@ -176,16 +174,13 @@ def delete_file():
 
 @app.route('/files/chatLoader', methods=['POST'])
 def chatLoader():
-    filepath = basedir + '\\uploads'
-    filepath = os.path.normpath(filepath)
+    filepath = os.path.normpath((basedir + '\\uploads'))
 
     vectorDB.embedAllInDirectiory(filepath, sessionID)
     return jsonify({'message': 'Files uploaded to VectorDB!'})
 
 @app.route('/files/resetChat', methods=['POST'])
 def chatReset():
-    filepath = basedir + '\\uploads'
-    filepath = os.path.normpath(filepath)
     try:
         vectorDB.deleteSession(sessionID)
     except:
@@ -195,13 +190,9 @@ def chatReset():
 
 @app.route('/files/historyDownload', methods=['POST'])
 def historyDownload():
-    #creates chat history
-    pdfPath = os.path.normpath(basedir + '\\chat_history.pdf')
-    filepath = vectorDB.chat_history_as_txt(sessionID)
-    filepath = os.path.normpath(filepath)
-    #makes chat history look nice
-    chatHistoryPrettifier.convert_chat_to_pdf(filepath, pdfPath)
-    #return filepath
+    pdfPath = os.path.normpath(basedir + '\\chat_history.pdf') #creates chat history
+    filepath = os.path.normpath(vectorDB.chat_history_as_txt(sessionID))
+    chatHistoryPrettifier.convert_chat_to_pdf(filepath, pdfPath) #return filepath for pdf
     return send_from_directory(directory=basedir, path='chat_history.pdf', as_attachment=True)
 
 if __name__ == '__main__':
