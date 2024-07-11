@@ -21,10 +21,10 @@ sessionID = 'abc123' #default sessionID
 #setting up drops
 def setup_session_dir(sessionID = 'abc123'):
     basedir = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sessions\\')) #gets the current directory
-    if not os.path.exists(os.path.join(basedir, 'sessions\\')):
-        os.makedirs(os.path.join(basedir, 'sessions\\'))
+    if not os.path.exists(basedir):
+        os.makedirs(basedir)
     #update the basedir to basedir/sessions/session_id/uploads folder
-    sessions = 'sessions\\' + sessionID
+    sessions = sessionID
     basedir = os.path.normpath(os.path.join(basedir, sessions)) #gets directory of the session
     #check if directories exist, if not create them
     if not os.path.exists(basedir):
