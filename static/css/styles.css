@@ -20,15 +20,17 @@ body {
   }
   
   .chat_container {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 400px;
     overflow-y: scroll;
-    justify-content: center;
     border: 1px solid #ccc;
     background-color: white;
     padding: 12px;
     border-radius: 4px;
   }
+
   
   .question_line {
     width: 100%;
@@ -37,6 +39,7 @@ body {
   }
   
   .chat-question {
+    align-self: flex-end;
     background-color: #04aa6d;
     color: white;
     float: right;
@@ -48,6 +51,7 @@ body {
   }
   
   .chat-response {
+    align-self: flex-start;
     float: left;
     clear: both;
     border: 1px solid #ccc;
@@ -108,3 +112,17 @@ body {
     background-color: rgb(94, 94, 94);
   }
   
+  .loading-spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid darkgreen;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 2s infinite ease-in-out;
+    margin: 20px 0;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }

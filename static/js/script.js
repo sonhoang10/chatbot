@@ -1,6 +1,12 @@
 async function submit_data() {
     var question = document.getElementById("questioninput").value;
+    //loading animation
+    var chat_container = document.querySelector(".chat_container");
+    var spinner = document.createElement("div");
+    spinner.classList.add("loading-spinner");
+
     onAppendClientChat();
+    chat_container.appendChild(spinner);
     console.log("Question:", question);
     var response = await fetch("/", {
       method: "POST",
@@ -17,6 +23,7 @@ async function submit_data() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
+      spinner.remove();
   
       while (!done) {
         const { value, done: readerDone } = await reader.read();
