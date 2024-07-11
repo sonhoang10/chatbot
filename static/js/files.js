@@ -53,6 +53,7 @@ const handleFileUploading = (file, uniqueIdentifier) => {
     
     xhr.open("POST", "/files", true);
     xhr.send(formData);
+    showPopup('File uploaded successfully', '#00B125');
     
     return xhr;
 };
@@ -139,13 +140,14 @@ const handleFileDeletion = (filename, fileItemElement) => {
             fileItemElement.remove();
             totalFiles--;
             updateFileCompletedStatus();
+            showPopup('File deleted successfully');
         } else {
             alert(data.error);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while trying to delete the file.');
+        popupMessage('An error occurred while trying to delete the file', '#E3413F');
     });
 };
 
@@ -162,7 +164,7 @@ function loadFilesToChat(_callback) {
         })
         .catch(error => {
             console.error('Error:', error);
-            showPopup('An error occurred while trying to reload the database');
+            showPopup('An error occurred while trying to reload the database', '#E3413F');
         });
 }
 
@@ -176,38 +178,52 @@ function resetChat(_callback) {
         })
         .catch(error => {
             console.error('Error:', error);
-            showPopup('An error occurred while trying to reset chat');
+            showPopup('An error occurred while trying to reset chat', '#E3413F');
         });
     //callback
     _callback();
 }
 
-function showPopup(message) {
+function showPopup(message, color = '#7e7e7e') {
     // Create the popup element
     const popup = document.createElement('div');
-    popup.className = 'popup-message';
+    popup.className = 'popup-message fade-in';
     popup.textContent = message;
+    popup.style.backgroundColor = color;
 
     // Append the popup to the body
     document.body.appendChild(popup);
 
-    // Automatically remove the popup after 3 seconds
+    // Automatically remove the popup using fade in and fade out after 3 seconds
     setTimeout(() => {
-        popup.remove();
+        popup.classList.remove('fade-in');
+        popup.classList.add('fade-out');
+        popup.addEventListener('animationend', () => {
+            popup.remove();
+        });
     }, 3000);
 }
-
 //downloads chat history
 function downloadChatHistory(_callback) {
-
-    fetch('/files/historyDownload',{ method: 'POST' })
-        .then(res=>{
+    fetch('/files/historyDownload', { method: 'POST' })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Network response was not ok');
+            }
             return res.blob();
-        }).then(blob=>{
-            download(blob)
-        }).catch(err=>console.log(err));
-    //callback
-    _callback();    
+        })
+        .then(blob => {
+            download(blob);
+        })
+        .catch(err => {
+            console.error('Error downloading file:', err);
+            showPopup('Chat history does not exist', '#E3413F');
+            // Handle the error, e.g., show an error message
+        })
+        .finally(() => {
+            // Callback to execute after attempt to download
+            _callback();
+        });
 }
 
 function testFunction(_callback) {
