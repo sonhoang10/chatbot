@@ -6,3 +6,5 @@
 /chroma_db
 /node_modules
 /faiss_index
+/sessions
+/__pycache__
