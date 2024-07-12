@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Uploader</title>
+    <input value="{{ BG }}" type="text" hidden="hidden" id="BGActive" />
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var BG = '{{ background | tojson }}'; // Assuming 'background' is a server-side variable
+            var BGActiveInput = document.getElementById('BGActive');
+            BGActiveInput.value = BG; // Update the value attribute
+            
+            if (BG === 'true') {
+                // Your additional logic here if needed
+                pageRotate();
+            }
+        });
+    </script>
     <link rel="stylesheet" href="../static/css/newfiles.css">
     <!-- Linking Box Icon for Icons -->
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
@@ -38,6 +51,13 @@
         <button class="reset-button button-with-spinner">
           Reset Chat
           <div class="spinner"></div>
+        </button>
+        <button class="BG-button">
+          💫
+          <label class="switch">
+            <input type="checkbox" id= 'checkbox'>
+            <span class="slider round"></span>
+          </label>
         </button>
       </div>
     </div>

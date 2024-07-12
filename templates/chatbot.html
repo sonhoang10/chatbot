@@ -21,5 +21,18 @@
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <input value="{{ BG }}" type="text" hidden="hidden" id="BGActive" />
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var BG = '{{ background | tojson }}'; // Assuming 'background' is a server-side variable
+            var BGActiveInput = document.getElementById('BGActive');
+            BGActiveInput.value = BG; // Update the value attribute
+            
+            if (BG === 'true') {
+                // Your additional logic here if needed
+                pageRotate();
+            }
+        });
+    </script>
   </body>
 </html>

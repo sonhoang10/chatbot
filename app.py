@@ -42,6 +42,7 @@ def setup_session_dir(sessionID = 'abc123'):
     return basedir
 basedir = setup_session_dir("abc123")
 store = {} #session storage for history
+background = False
 
 
 
@@ -110,7 +111,7 @@ def chatbot():
 
         return Response(generate(question, sessionID, ragChain), mimetype='text/event-stream', content_type='text/event-stream')
 
-    return render_template('chatbot.html')
+    return render_template('chatbot.html', background = background)
 
 @app.route('/tts', methods=['POST'])
 def audioReturn():
@@ -144,7 +145,7 @@ def upload():
             return "File uploaded successfully", 200
         else:
             return "Could not read file", 400
-    return render_template('newFiles.html')
+    return render_template('newFiles.html', background = background)
 
 @app.route('/files/list', methods=['GET'])
 def list_files():
@@ -197,6 +198,13 @@ def historyDownload():
     filepath = os.path.normpath(vectorDB.chat_history_as_txt(sessionID))
     chatHistoryPrettifier.convert_chat_to_pdf(filepath, pdfPath) #return filepath for pdf
     return send_from_directory(directory=basedir, path='chat_history.pdf', as_attachment=True)
+
+@app.route('/background', methods=['POST'])
+def retbackground():
+    global background
+    background = not background
+    text = str(background)
+    return jsonify({'bool': text}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

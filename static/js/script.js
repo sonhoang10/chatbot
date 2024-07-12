@@ -135,4 +135,73 @@ async function submit_data() {
       document.getElementById("onClickAddChat").click();
     }
   });
-  
+
+function pageRotate(){
+  let currentAngle = 120; // Initialize the current angle
+  let targetAngle = 0; // Initialize the target angle to be the same as the current angle
+  const maxChangeRate = 5; // Maximum change in degrees per update
+  const updateInterval = 75; // Update interval in milliseconds
+  let prevX = window.innerWidth / 2; // Initialize previous X to center of the screen
+  let prevY = window.innerHeight / 2; // Initialize previous Y to center of the screen
+  const delayFactor = 0.1; // Delay factor for smoothing (higher values increase delay)
+  const stillTimeout = 500; // Timeout in milliseconds to consider the mouse still
+
+  // Calculate the angle based on the change in mouse position
+  function angleFromMovement(prevX, prevY, currX, currY) {
+      const dx = currX - prevX;
+      const dy = currY - prevY;
+      let theta = Math.atan2(dy, dx); // range (-PI, PI]
+      theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+      return theta;
+  }
+
+  // Update targetAngle based on mouse movement
+  let timeoutId = null;
+  document.addEventListener("mousemove", (e) => {
+      clearTimeout(timeoutId); // Clear previous timeout
+      timeoutId = setTimeout(() => {
+          targetAngle = currentAngle; // Reset targetAngle to currentAngle when still
+      }, stillTimeout);
+
+      setTimeout(() => {
+          const currX = e.clientX;
+          const currY = e.clientY;
+          targetAngle += angleFromMovement(prevX, prevY, currX, currY);
+          prevX = currX;
+          prevY = currY;
+      }, delayFactor * updateInterval);
+  });
+
+  function updateAngle() {
+      // Calculate the difference between the current angle and the target angle
+      let angleDiff = targetAngle - currentAngle;
+
+      // Normalize the angle difference to be within the range [-180, 180]
+      if (angleDiff > 180) {
+          angleDiff -= 360;
+      } else if (angleDiff < -180) {
+          angleDiff += 360;
+      }
+
+      // Limit the change in angle to the maxChangeRate
+      if (Math.abs(angleDiff) > maxChangeRate) {
+          currentAngle += maxChangeRate * Math.sign(angleDiff);
+      } else {
+          currentAngle = targetAngle;
+      }
+
+      // Normalize the current angle to be within the range [0, 360]
+      if (currentAngle >= 360) {
+          currentAngle -= 360;
+      } else if (currentAngle < 0) {
+          currentAngle += 360;
+      }
+
+      // Set the document background to the current angle
+      document.body.style.background = `linear-gradient(${currentAngle}deg, rgba(96, 227, 97, 1) 0%, rgb(0 125 44) 150%)`;
+  }
+
+  // Continuously update the background angle
+  setInterval(updateAngle, updateInterval);
+
+}
