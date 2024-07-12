@@ -127,7 +127,7 @@ def mp3(id):
         audioFileName = id + ".mp3"
         # directory = "AudioFolder/"+ audioFileName
         # directory = os.path.normpath(directory)
-        directory = os.path.normpath("AudioFolder/" + audioFileName)
+        directory = os.path.normpath(basedir+"/AudioFolder/" + audioFileName)
         return send_file(directory, as_attachment=True)
 
 
