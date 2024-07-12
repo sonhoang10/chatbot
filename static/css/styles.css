@@ -22,8 +22,6 @@ body {
   }
   
   .chat_container {
-    display: flex;
-    flex-direction: column;
     width: 100%;
     height: 450px;
     overflow-y: scroll;
@@ -41,7 +39,6 @@ body {
   }
   
   .chat-question {
-    align-self: flex-end;
     background-color: #04aa6d;
     color: white;
     float: right;
@@ -53,7 +50,6 @@ body {
   }
   
   .chat-response {
-    align-self: flex-start;
     float: left;
     clear: both;
     border: 1px solid #ccc;
@@ -67,6 +63,7 @@ body {
   }
   
   .speaker {
+    align-self: flex-start;
     float: left;
     clear: both;
     margin: 5px 8px;
@@ -115,13 +112,14 @@ body {
   }
   
   .loading-spinner {
+    float: left;
+    clear: both;
     border: 8px solid #f3f3f3;
     border-top: 8px solid darkgreen;
     border-radius: 50%;
     width: 30px;
     height: 30px;
     animation: spin 2s infinite ease-in-out;
-    margin: 20px 0;
   }
 
   @keyframes spin {
