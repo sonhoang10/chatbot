@@ -17,12 +17,15 @@
         </h2>
         <div class="chat_container"></div>
         <div class="question_line">
-          <input id="microphone" type="button" value="🎙️" />
+          <button id="microphone" class="button">
+            <i class="fas fa-microphone"></i>
+          </button>
           <input type="text" id="questioninput" placeholder="Type or ask me something" />
           <input id="onClickAddChat" type="submit" value=">" onclick="submit_data()" />
         </div>
       </div>
     </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>

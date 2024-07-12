@@ -1,4 +1,5 @@
 var button = document.getElementById("microphone");
+const icon = button.querySelector('i');
 var input = document.getElementById("questioninput");
 const playback = document.querySelector('.playback');
 
@@ -30,12 +31,20 @@ recognition.addEventListener('result', e => { //updates the input
 
 
 recognition.addEventListener('end', () => { //changes the color of mic when ending
-    button.style.backgroundColor = '#cccccc'
     active = false
+    icon.style.animation = 'none'
+    icon.style.color = 'black'
+    icon.style.fontSize = "16px"
  });
 
  recognition.addEventListener('start', () => { //changes the color of mic when starting
-    button.style.backgroundColor = 'red'
+    icon.style.animation = 'pulseRed 2s infinite ease-in-out'
+    //animation for the span of the button
+    icon.style.columnSpan.animation = 'pulse 2 2s infinite ease-in-out'
+    //set button active to true
+    button.active = true
+
+
     active = true
  });
 
@@ -47,11 +56,12 @@ button.addEventListener ('click', () => { //decides whether or not to stop or st
 
 
     if (active){
-        button.style.backgroundColor = 'green'
+        icon.style.animation = 'none'
+        icon.style.color = 'green'
         recognition.start();
     }
     else{
-        button.style.backgroundColor = 'blue'
+        icon.style.animation = 'blink 1s infinite'
         recognition.stop;
     }
 });

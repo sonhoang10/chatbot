@@ -438,5 +438,4 @@ function stopPageRotate() {
         clearInterval(rotateIntervalId);
         rotateIntervalId = null; // Reset the interval ID
     }
-    document.body.style.background = '#04aa6d';
 }

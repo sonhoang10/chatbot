@@ -12,7 +12,7 @@ body {
   padding: 15px;
   justify-content: center;
   min-height: 100vh;
-  background: #04aa6d;
+  background: linear-gradient(120deg, rgb(96, 227, 97) 0%, rgb(0, 125, 44) 150%);
 }
 
 .back-button { /* Example button color */
@@ -280,12 +280,22 @@ body {
 }
 
 .BG-button {
+  display: inline;
   background-color: #dddddd; /* Example button color */
   color: white;
   border: none;
   padding: 10px;
   cursor: pointer;
-  font-size: 15px;
+}
+
+.BGtext{
+  display: inline-flex;
+  font-size: 16px;
+  transition: transform 0.5s;
+}
+
+.BG-button:hover .BGtext {
+  animation: spin 2s;
 }
 
 .switch {
@@ -427,4 +437,9 @@ input:checked + .slider:before {
 @keyframes fadeOut {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
