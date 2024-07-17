@@ -77,7 +77,10 @@ def chatbot():
                     item = q.get()
                     if item == StopIteration:
                         break
-                    yield item
+                    if isinstance(item, list):
+                        metadata = item[0]
+                    else:
+                        yield item
 
                 loop.call_soon_threadsafe(loop.stop)
                 thread.join()
@@ -106,6 +109,9 @@ def chatbot():
         @async_to_sync
         async def generate(question, sessionID, ragChain):
             async for chunk in vectorDB.chat(question, sessionID, ragChain):
+                if isinstance(chunk, list):
+                    metadata = chunk[0]
+                    continue
                 json_data = json.dumps({'sender': 'bot', 'content': chunk})
                 yield f"data: {json_data}\n\n"
 
@@ -180,7 +186,11 @@ def delete_file():
 def chatLoader():
     filepath = os.path.normpath((basedir + '\\uploads'))
 
-    vectorDB.embedAllInDirectiory(filepath, sessionID)
+    try:
+        vectorDB.embedAllInDirectiory(filepath, sessionID)
+    except:
+        pass
+    vectorDB.embedAllImages(filepath, sessionID)
     return jsonify({'message': 'Files uploaded to VectorDB!'})
 
 @app.route('/files/resetChat', methods=['POST'])

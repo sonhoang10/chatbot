@@ -3,6 +3,7 @@ import textParser
 import openai
 from dotenv import load_dotenv
 import json
+import imageHandler
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_chroma import Chroma
 from langchain_community.chat_message_histories import ChatMessageHistory
@@ -14,7 +15,12 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader
 import shutil
+import time
+from PIL import Image
+from langchain_core.documents import Document
 import asyncio
+
+os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -24,7 +30,7 @@ def setup_session_dir(session_id):
     # Get the current working directory
     base_dir = os.getcwd()
     # Create the session directory path within the current working directory
-    session_dir = os.path.normpath(os.path.join(base_dir, 'sessions', session_id))
+    session_dir = os.path.normpath(os.path.join(base_dir, 'sessions', session_id, 'chromaDB'))
     # Create the directory if it does not exist
     if not os.path.exists(session_dir):
         os.makedirs(session_dir)
@@ -44,7 +50,7 @@ def vectorStorage(chunks, sessionID):
     embeddings_function = OpenAIEmbeddings(
                 api_key=os.getenv("OPENAI_API_KEY")
             )
-    db = Chroma.from_documents(chunks, embeddings_function, persist_directory=sessionDir)
+    db = Chroma.from_documents(documents=chunks, embedding=embeddings_function, persist_directory=sessionDir)
     #retriever = db.as_retriever()
     return db
 
@@ -78,7 +84,7 @@ def createChain(db):
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer "
         "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
+        "don't know. Use 12 sentences minimum and keep the "
         "answer concise."
         "\n\n"
         "{context}"
@@ -152,6 +158,7 @@ def chatResponseChain(chain):
 
 async def chatResponse(chain, question, sessionID):
     response = ""
+    imgMetaData = None
     async for s in chain.astream(
         {"input": question},
         config={
@@ -159,6 +166,12 @@ async def chatResponse(chain, question, sessionID):
         },  # constructs a key "abc123" in `store`.
     ):
         try:
+            try:
+                if s['context'][0].metadata:
+                    imgMetaData = s['context']
+                    # print (imgMetaData)
+            except:
+                pass
             chunk = s['answer']
             response += chunk
             yield chunk  # Yield each chunk instead of accumulating the entire response
@@ -169,25 +182,16 @@ async def chatResponse(chain, question, sessionID):
     chat_history.add_ai_message(response)
     
     save_chat_history(chat_history, sessionID)
+    if (imgMetaData):
+        yield imgMetaData
+    
 
 def deleteSession(sessionID = "abc123"):
     basedir = setup_session_dir(sessionID)
-    try:
-        try:
-            db = Chroma.from_texts([], persist_directory=basedir, embedding=OpenAIEmbeddings())
-        except:
-            db = Chroma(persist_directory=basedir, embedding_function=OpenAIEmbeddings())
-        db.reset()
+    #delete database folder
+    shutil.rmtree(basedir)
+    setup_session_dir(sessionID)
         
-    except:
-        pass
-    #delete chat_history.json in session/sessionID folder
-    chat_history_path = os.path.join(basedir, "chat_history.json")
-    if os.path.exists(chat_history_path):
-        try:
-            os.remove(chat_history_path)
-        except:
-            shutil.rmtree(chat_history_path)
 
 def embed(file_path, sessionID = "abc123"):
     text = readFile(file_path)
@@ -207,6 +211,43 @@ def embedAllInDirectiory(directory, sessionID):
     chunks = createChunks(docs)
     db = vectorStorage(chunks, sessionID)
 
+def embedImage(imageuri, sessionID="abc123"):
+    base_dir = os.getcwd()
+    image_path = os.path.normpath(os.path.join(base_dir, imageuri))
+    
+    # Using imageHandler.py to get the caption and objects detected
+    caption, objects = imageHandler.image_handler(image_path)
+    
+    # Extract additional metadata
+    file_path = image_path
+    file_name = os.path.basename(image_path)
+    file_type = os.path.splitext(file_name)[1].lower()
+    
+    # Create document content
+    md = {
+        "source": "Local", "file_path": file_path,"file_type": file_type,"title": file_name
+    }
+    docs = f"{caption}\n{objects}"
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    document = text_splitter.create_documents(texts = [docs], metadatas = [md])
+    db = Chroma.from_documents(documents=document, persist_directory=setup_session_dir(sessionID), embedding=OpenAIEmbeddings())
+    
+    
+
+
+
+
+def embedAllImages(directory, sessionID):
+    base_dir = os.getcwd()
+    directory = os.path.normpath(os.path.join(base_dir, directory))
+    client = Chroma(persist_directory=setup_session_dir(sessionID), embedding_function=OpenAIEmbeddings())
+    list_extensions = [".jpg", ".jpeg", ".png"]
+    imageFiles = [f for f in os.listdir(directory) if f.endswith(tuple(list_extensions))]
+    #fileIDs should just be the file names without the extension
+    fileIDs = [os.path.splitext(f)[0] for f in imageFiles]
+    for image in imageFiles:
+        embedImage(image, sessionID)
+
 async def chat(question, sessionID = "abc123", ragChain = None):
     sessionDir = setup_session_dir(sessionID)
     try:
@@ -221,16 +262,38 @@ async def chat(question, sessionID = "abc123", ragChain = None):
             ragChain = chatResponseChain(chain)
         store[sessionID] = ragChain
 
+    metadata = None
     async for chunk in chatResponse(ragChain, question, sessionID):
-        yield chunk
+        #check if chunk is a list, if so it contains metadata, save as metadata and do not yield
+        if isinstance(chunk, list):
+            metadata = chunk
+        else:
+            yield chunk   
+    yield (metadata)
 
 
 store = {}
 
+#time embedding functin
+
+
+# deleteSession("abc123")
+# start = time.time()
+# embedImage("C:\\Users\\An\\Downloads\\chatbot\\sessions\\abc123\\uploads\\image.jpg")
+# #embed("C:\\Users\\An\\Downloads\\chatbot\\resume.pdf")
+# end = time.time()
+# print("Time taken: ", end-start)
+
+
+
 # Main function to run the async chat function
-#async def main():
-#    async for value in chat("What is the capital of France?"):
-#        print(value)
+async def main():
+    
+    async for value in chat("Tell me about the dog."):
+        print(value, end="")
+    print("\n")
+    async for value in chat("What is on my resume?"):
+        print(value, end="")
 
 # Run the main function in the event loop
 #asyncio.run(main())
