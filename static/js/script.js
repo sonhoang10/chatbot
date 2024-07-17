@@ -139,8 +139,8 @@ async function submit_data() {
 function pageRotate(){
   let currentAngle = 120; // Initialize the current angle
   let targetAngle = 0; // Initialize the target angle to be the same as the current angle
-  const maxChangeRate = 5; // Maximum change in degrees per update
-  const updateInterval = 75; // Update interval in milliseconds
+  const maxChangeRate = 2; // Maximum change in degrees per update
+  const updateInterval = 25; // Update interval in milliseconds
   let prevX = window.innerWidth / 2; // Initialize previous X to center of the screen
   let prevY = window.innerHeight / 2; // Initialize previous Y to center of the screen
   const delayFactor = 0.1; // Delay factor for smoothing (higher values increase delay)

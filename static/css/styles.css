@@ -60,7 +60,7 @@ body {
 
 .chat-question {
   font-size: 1rem; /* 10px */
-  width: 30rem;
+  max-width: 30rem;
   clear: both;
   float: right;
   background-color: #04aa6d;
@@ -73,7 +73,7 @@ body {
 
 .chat-response {
   font-size: 1rem; /* 10px */
-  width: 30rem;
+  max-width: 30rem;
   clear: both;
   border: 0.1rem solid #ccc; /* 1px */
   padding: 1rem; /* 10px */
@@ -130,6 +130,19 @@ input[type="button"]:hover {
 .button i {
   font-size: 1.6rem; /* 16px */
   transform-origin: center;
+}
+.buttonSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem; /* Adjusted width */
+  height: 4rem; /* Adjusted height */
+  background-color: #04aa6d;
+  color: white;
+  padding: 1rem; /* Adjusted padding */
+  border: none;
+  border-radius: 0.4rem; /* 4px */
+  cursor: pointer;
 }
 
 @keyframes pulseRed {
