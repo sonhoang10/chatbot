@@ -5,7 +5,9 @@ import vectorDB  # import file vectorDB
 import json
 import chatHistoryPrettifier  # makes chat history look nice
 from dotenv import load_dotenv
-from tts import text_to_speech
+#from tts import text_to_speech
+from newTTS import text_to_speech
+from vnTTS import VNTTS
 import asyncio
 from queue import Queue
 from threading import Thread
@@ -17,6 +19,11 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 sessionID = 'abc123' #default sessionID
+modelDir = os.path.join(basedir, "model")
+outputDir = os.path.join(basedir, "sessions", sessionID, "AudioFolder")
+ttsModel = VNTTS(model_dir=modelDir, output_dir=outputDir)
+for message in ttsModel.load_model():
+    print(message)
 
 #setting up drops
 def setup_session_dir(sessionID = 'abc123'):
@@ -40,9 +47,21 @@ def setup_session_dir(sessionID = 'abc123'):
         DROPZONE_MAX_FILES=30,
     )
     return basedir
+
+#set up chatbot model
 basedir = setup_session_dir("abc123")
 store = {} #session storage for history
 background = False
+
+sessionDir = vectorDB.setup_session_dir(sessionID)
+try:
+    db = vectorDB.Chroma(persist_directory=sessionDir, embedding_function=vectorDB.OpenAIEmbeddings())
+except:
+    db = vectorDB.Chroma.from_texts([], persist_directory=sessionDir, embedding_function=vectorDB.OpenAIEmbeddings())
+
+chain = vectorDB.createChain(db)
+ragChain = vectorDB.chatResponseChain(chain)
+store[sessionID] = ragChain
 
 
 
@@ -126,12 +145,12 @@ def audioReturn():
     directory = os.path.normpath((basedir + '\\AudioFolder\\'))
     if not os.path.exists(directory):
         os.makedirs(directory)
-    id = text_to_speech(answer, directory) #returns audioId of the audio file
+    id = ttsModel.text_to_speech(answer) #returns audioId of the audio file
     return jsonify({'message': 'Audio file created!', 'audioId': id})
 
 @app.route('/mp3/<id>', methods=['GET'])
 def mp3(id):
-        audioFileName = id + ".mp3"
+        audioFileName = id + ".wav"
         # directory = "AudioFolder/"+ audioFileName
         # directory = os.path.normpath(directory)
         directory = os.path.normpath(basedir + '\\AudioFolder\\' + audioFileName)
@@ -139,6 +158,15 @@ def mp3(id):
         return send_file(directory, as_attachment=True)
 
 
+@app.route('/audio', methods=['GET', 'POST'])
+def audio():
+    data = request.get_json()
+    response_text = data.get('text_tran_tospeech')
+             # Convert response to speech
+    if response_text:         
+        response_audio = text_to_speech(response_text)
+        return jsonify({'response_audio': response_audio})
+    
 @app.route('/files', methods=['GET', 'POST'])
 def upload():
     #check if directories exist, if not create them

@@ -52,7 +52,7 @@ async function submit_data() {
       }
   
       if (accumulatedResponse) {
-        addAudioClip(accumulatedResponse);
+        addSpeakerButton(accumulatedResponse);
       }
     }
   }
@@ -85,43 +85,61 @@ async function submit_data() {
     }
   }
   
-  async function addAudioClip(answer) {
-    const response = await fetch('/tts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ answer: answer }),
+  function addSpeakerButton(answer) {
+    var chat_container = document.querySelector(".chat_container");
+
+    var response_icon = document.createElement("i");
+    response_icon.classList.add("fa", "fa-volume-up");
+    response_icon.setAttribute("aria-hidden", "true");
+
+    var speaker = document.createElement("div");
+    speaker.classList.add("speaker");
+    speaker.appendChild(response_icon);
+    chat_container.appendChild(speaker);
+
+    response_icon.addEventListener("click", function () {
+        loadAndPlayAudio(answer, speaker);
     });
-  
-    const data = await response.json();
-    const audioId = data.audioId;
-  
-    if (audioId) {
-      var chat_container = document.querySelector(".chat_container");
-  
-      var chatResponse_audio = document.createElement("audio");
-      chatResponse_audio.controls = "controls";
-      chatResponse_audio.classList.add("chatResponse_audio");
-  
-      var audio_source = document.createElement("source");
-      audio_source.src = "/mp3/" + audioId;
-      chatResponse_audio.appendChild(audio_source);
-  
-      var response_icon = document.createElement("i");
-      response_icon.classList.add("fa", "fa-volume-up");
-      response_icon.setAttribute("aria-hidden", "true");
-  
-      var speaker = document.createElement("div");
-      speaker.classList.add("speaker");
-      speaker.appendChild(chatResponse_audio);
-      speaker.appendChild(response_icon);
-      chat_container.appendChild(speaker);
-  
-      response_icon.addEventListener("click", function () {
-        chatResponse_audio.play();
-      });
-    }
+}
+
+  async function loadAndPlayAudio(answer, speakerElement) {
+      let audioElement = speakerElement.querySelector("audio");
+      
+      if (!audioElement) {
+        var spinner = document.createElement("div");
+        spinner.classList.add("loading-spinner");
+        spinner.style.marginLeft = "1rem";
+        spinner.style.verticalAlign = "middle";
+        spinner.style.display = "inline-block";
+        speakerElement.appendChild(spinner);
+          const response = await fetch('/tts', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ answer: answer }),
+          });
+
+          const data = await response.json();
+          const audioId = data.audioId;
+          spinner.remove();
+
+          if (audioId) {
+              audioElement = document.createElement("audio");
+              audioElement.controls = "controls";
+              audioElement.classList.add("chatResponse_audio");
+
+              var audio_source = document.createElement("source");
+              audio_source.src = "/mp3/" + audioId;
+              audioElement.appendChild(audio_source);
+
+              speakerElement.insertBefore(audioElement, speakerElement.firstChild);
+          }
+      }
+
+      if (audioElement) {
+          audioElement.play();
+      }
   }
   
   function scrollToBottom() {
