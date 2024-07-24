@@ -16,6 +16,7 @@ from huggingface_hub import hf_hub_download, snapshot_download
 from unidecode import unidecode
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
+from vietNorm.vietNorm import TTSnorm
 import timeit
 
 class VNTTS:
@@ -39,24 +40,24 @@ class VNTTS:
         self.clear_gpu_cache()
         os.makedirs(checkpoint_dir, exist_ok=True)
 
-        required_files = ["model.pth", "config.json", "vocab.json", "speakers_xtts.pth"]
-        files_in_dir = os.listdir(checkpoint_dir)
-        if not all(file in files_in_dir for file in required_files):
-            yield f"Missing model files! Downloading from {repo_id}..."
-            snapshot_download(
-                repo_id=repo_id,
-                repo_type="model",
-                local_dir=checkpoint_dir,
-            )
-            hf_hub_download(
-                repo_id="coqui/XTTS-v2",
-                filename="speakers_xtts.pth",
-                local_dir=checkpoint_dir,
-            )
-            yield f"Model download finished..."
+        # required_files = ["model.pth", "config.json", "vocab.json", "speakers_xtts.pth"]
+        # files_in_dir = os.listdir(checkpoint_dir)
+        # if not all(file in files_in_dir for file in required_files):
+        #     yield f"Missing model files! Downloading from {repo_id}..."
+        #     snapshot_download(
+        #         repo_id=repo_id,
+        #         repo_type="model",
+        #         local_dir=checkpoint_dir,
+        #     )
+        #     hf_hub_download(
+        #         repo_id="coqui/XTTS-v2",
+        #         filename="speakers_xtts.pth",
+        #         local_dir=checkpoint_dir,
+        #     )
+        #     yield f"Model download finished..."
 
         xtts_config = os.path.join(checkpoint_dir, "config.json")
-        config = XttsConfig()
+        config = XttsConfig() 
         config.load_json(xtts_config)
         self.model = Xtts.init_from_config(config)
         yield "Loading model..."
@@ -167,6 +168,7 @@ class VNTTS:
         else:
             sentences = tts_text.split(". ")
 
+        startTime = timeit.default_timer()
         wav_chunks = []
         for sentence in sentences:
             if sentence.strip() == "":
@@ -176,19 +178,21 @@ class VNTTS:
                 language=lang,
                 gpt_cond_latent=gpt_cond_latent,
                 speaker_embedding=speaker_embedding,
-                temperature=0.5,
+                enable_text_splitting=True,
+                temperature=0.1,
                 length_penalty=1.0,
                 repetition_penalty=10.0,
-                top_k=50,
-                top_p=0.8,
-                enable_text_splitting=True,
+                top_k=30,
+                top_p=0.85,
+                #speed = 1.3
             )
 
             keep_len = self.calculate_keep_len(sentence, lang)
             wav_chunk["wav"] = wav_chunk["wav"][:keep_len]
 
             wav_chunks.append(torch.tensor(wav_chunk["wav"]))
-        
+        print("Inference Time: ", timeit.default_timer()- startTime)
+
         out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
         audioId = str(uuid.uuid4())
         out_path = os.path.join(self.OUTPUT_DIR, f"{audioId}.wav")
@@ -204,7 +208,7 @@ class VNTTS:
         
         audioPath = os.path.join(self.MODEL_DIR, "vi_sample.wav")
         start = timeit.default_timer()
-        audioId = self.run_tts("en", text, audioPath, False, False)
+        audioId = self.run_tts("vi", text, audioPath, False, True)
         print("Time taken: ", timeit.default_timer() - start)
         return audioId
 
@@ -230,7 +234,7 @@ class VNTTS:
     @staticmethod
     def normalize_vietnamese_text(text):
         text = (
-            VNTTS.TTSnorm(text, unknown=False, lower=False, rule=True)
+            TTSnorm(text, unknown=True, lower=False, rule=True)
             .replace("..", ".")
             .replace("!.", "!")
             .replace("?.", "?")
@@ -257,54 +261,6 @@ class VNTTS:
             return 13000 * word_count + 2000 * num_punct
         return -1
 
-    @staticmethod
-    def TTSnorm(text, punc=False, unknown=True, lower=True, rule=False):
-        module_name = 'vinorm'
-        spec = importlib.util.find_spec(module_name)
-        
-        if spec is None:
-            raise ImportError(f"Module {module_name} not found")
-        
-        module_path = spec.origin
-        module_dir = os.path.dirname(module_path)
-
-        input_path = os.path.join(module_dir, "input.txt")
-        output_path = os.path.join(module_dir, "output.txt")
-        main_executable = os.path.join(module_dir, "main")
-
-        with open(input_path, "w", encoding="utf-8") as fw:
-            fw.write(text)
-
-        myenv = os.environ.copy()
-        myenv['LD_LIBRARY_PATH'] = os.path.join(module_dir, 'lib')
-
-        command = ['python', main_executable]
-        if punc:
-            command.append("-punc")
-        if unknown:
-            command.append("-unknown")
-        if lower:
-            command.append("-lower")
-        if rule:
-            command.append("-rule")
-
-        try:
-            subprocess.check_call(command, env=myenv, cwd=module_dir)
-        except subprocess.CalledProcessError as e:
-            print(f"Command failed with error: {e}")
-
-        with open(output_path, "r", encoding="utf-8") as fr:
-            text = fr.read()
-
-        processed_text = ""
-        segments = text.split("#line#")
-        for segment in segments:
-            if segment.strip() == "":
-                continue
-            processed_text += segment + ". "
-
-        return processed_text
-
 # Set up logging
 logging.basicConfig(
     level=logging.ERROR,
@@ -313,21 +269,31 @@ logging.basicConfig(
 )
 
 # Usage example
-# if __name__ == "__main__":
-#     currentDir = os.getcwd()
-#     modelDir = os.path.join(currentDir, "model")
-#     outputDir = os.path.join(currentDir, "AudioFolder")
-#     vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
+if __name__ == "__main__":
+    startTime = timeit.default_timer()
+    currentDir = os.getcwd()
+    modelDir = os.path.join(currentDir, "model")
+    outputDir = os.path.join(currentDir, "AudioFolder")
+    vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
+    #delete everything in the output folder
+    for file in os.listdir(outputDir):
+        os.remove(os.path.join(outputDir, file))
+    print("Time taken to initilize: ", timeit.default_timer() - startTime)
+
+    startTime = timeit.default_timer()
+    normd = vntts.normalize_vietnamese_text("Xin chào, bây giờ tôi là gói Python")
+    print(normd)
+    print("Time taken to normalize text: ", timeit.default_timer() - startTime)
     
-#     # Load the model
-#     for message in vntts.load_model():
-#         print(message)
+    # # Load the model
+    startTime = timeit.default_timer()
+    for message in vntts.load_model():
+        print(message)
+    print("Time taken to load model: ", timeit.default_timer() - startTime)
     
-#     # Generate speech
-#     startTime = timeit.default_timer()
-#     print("timer started")
-#     text = "Xin chào, bây giờ tôi là gói Python"
-#     output_path = vntts.text_to_speech(text)
-#     print(f"Speech generated at: {output_path}")
-#     print("Time taken: ", timeit.default_timer() - startTime)
+    # Generate speech
+    startTime = timeit.default_timer()
+    print("timer started")
+    output_path = vntts.text_to_speech("Xin chào, bây giờ tôi là gói Python")
+    print(f"Speech generated at: {output_path}")
     
