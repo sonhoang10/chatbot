@@ -6,7 +6,6 @@ import json
 import chatHistoryPrettifier  # makes chat history look nice
 from dotenv import load_dotenv
 #from tts import text_to_speech
-from newTTS import text_to_speech
 from vnTTS import VNTTS
 import asyncio
 from queue import Queue
@@ -22,8 +21,13 @@ sessionID = 'abc123' #default sessionID
 modelDir = os.path.join(basedir, "model")
 outputDir = os.path.join(basedir, "sessions", sessionID, "AudioFolder")
 ttsModel = VNTTS(model_dir=modelDir, output_dir=outputDir)
-for message in ttsModel.load_model():
-    print(message)
+try:
+    for message in ttsModel.load_model(modelDir):
+        print(message)
+except:
+    ttsModel.setup(modelDir)
+    for message in ttsModel.load_model(modelDir):
+        print(message)
 
 #setting up drops
 def setup_session_dir(sessionID = 'abc123'):
@@ -132,7 +136,9 @@ def chatbot():
                     metadata = chunk[0]
                     continue
                 json_data = json.dumps({'sender': 'bot', 'content': chunk})
-                yield f"data: {json_data}\n\n"
+                #check if the json content has the word null
+                if 'null' not in json_data:
+                    yield f"data: {json_data}\n\n"
 
         return Response(generate(question, sessionID, ragChain), mimetype='text/event-stream', content_type='text/event-stream')
 
@@ -164,7 +170,7 @@ def audio():
     response_text = data.get('text_tran_tospeech')
              # Convert response to speech
     if response_text:         
-        response_audio = text_to_speech(response_text)
+        response_audio = ttsModel.text_to_speech(response_text)
         return jsonify({'response_audio': response_audio})
     
 @app.route('/files', methods=['GET', 'POST'])
@@ -245,4 +251,4 @@ def retbackground():
     return jsonify({'bool': text}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False) #when set to true it runs twice for some reason

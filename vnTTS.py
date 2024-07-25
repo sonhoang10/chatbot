@@ -18,6 +18,7 @@ from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from vietNorm.vietNorm import TTSnorm
 import timeit
+import pickle
 
 class VNTTS:
     def __init__(self, model_dir, output_dir):
@@ -36,39 +37,59 @@ class VNTTS:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    def load_model(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=False):
+    def save_pickle(self, cache, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(cache, f)
+
+    def load_pickle(self, filename):
+        try:
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            return {}
+    
+    def setup(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS"):
+
+        yield f"Missing model files! Downloading from {repo_id}..."
+        snapshot_download(
+            repo_id=repo_id,
+            repo_type="model",
+            local_dir=checkpoint_dir,
+        )
+        hf_hub_download(
+            repo_id="coqui/XTTS-v2",
+            filename="speakers_xtts.pth",
+            local_dir=checkpoint_dir,
+        )
+        yield f"Model download finished..."
+
+
+    def load_model(self, checkpoint_dir="model/"):
         self.clear_gpu_cache()
         os.makedirs(checkpoint_dir, exist_ok=True)
-
-        # required_files = ["model.pth", "config.json", "vocab.json", "speakers_xtts.pth"]
-        # files_in_dir = os.listdir(checkpoint_dir)
-        # if not all(file in files_in_dir for file in required_files):
-        #     yield f"Missing model files! Downloading from {repo_id}..."
-        #     snapshot_download(
-        #         repo_id=repo_id,
-        #         repo_type="model",
-        #         local_dir=checkpoint_dir,
-        #     )
-        #     hf_hub_download(
-        #         repo_id="coqui/XTTS-v2",
-        #         filename="speakers_xtts.pth",
-        #         local_dir=checkpoint_dir,
-        #     )
-        #     yield f"Model download finished..."
-
         xtts_config = os.path.join(checkpoint_dir, "config.json")
         config = XttsConfig() 
         config.load_json(xtts_config)
         self.model = Xtts.init_from_config(config)
         yield "Loading model..."
         self.model.load_checkpoint(
-            config, checkpoint_dir=checkpoint_dir, use_deepspeed=use_deepspeed
+            config, checkpoint_dir=checkpoint_dir, use_deepspeed=False
         )
         if torch.cuda.is_available():
             self.model.cuda()
 
-        print("Model Loaded!")
         yield "Model Loaded!"
+
+        filter_cache_file = os.path.join(checkpoint_dir, "filter_cache.pkl")
+        conditioning_latents_cache_file = os.path.join(checkpoint_dir, "conditioning_latents_cache.pkl")
+        model_pickle_file = os.path.join(checkpoint_dir, "pickled_model.pkl")
+        filter_cache_file = os.path.normpath(filter_cache_file)
+        conditioning_latents_cache_file = os.path.normpath(conditioning_latents_cache_file)
+        model_pickle_file = os.path.normpath(model_pickle_file)
+
+    
+        self.filter_cache = self.load_pickle(filter_cache_file)
+        self.conditioning_latents_cache = self.load_pickle(conditioning_latents_cache_file)
 
         # Preprocess conditioning latents and filter cache
         yield "Preprocessing conditioning latents and filter cache..."
@@ -79,6 +100,7 @@ class VNTTS:
             filtered_audio_path = audio_path.replace(".wav", self.FILTER_SUFFIX)
             subprocess.run(["deepFilter", audio_path, "-o", os.path.dirname(audio_path)])
             self.filter_cache[audio_path] = filtered_audio_path
+            self.save_pickle(self.filter_cache, filter_cache_file)
 
         # Compute conditioning latents
         cache_key = (
@@ -95,8 +117,10 @@ class VNTTS:
                 sound_norm_refs=self.model.config.sound_norm_refs,
             )
             self.conditioning_latents_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
+            self.save_pickle(self.conditioning_latents_cache, conditioning_latents_cache_file)
 
         yield "Preprocessing complete!"
+
 
     def invalidate_cache(self, cache_limit=50):
         if len(self.cache_queue) > cache_limit:
@@ -269,31 +293,26 @@ logging.basicConfig(
 )
 
 # Usage example
-if __name__ == "__main__":
-    startTime = timeit.default_timer()
-    currentDir = os.getcwd()
-    modelDir = os.path.join(currentDir, "model")
-    outputDir = os.path.join(currentDir, "AudioFolder")
-    vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
-    #delete everything in the output folder
-    for file in os.listdir(outputDir):
-        os.remove(os.path.join(outputDir, file))
-    print("Time taken to initilize: ", timeit.default_timer() - startTime)
-
-    startTime = timeit.default_timer()
-    normd = vntts.normalize_vietnamese_text("Xin chào, bây giờ tôi là gói Python")
-    print(normd)
-    print("Time taken to normalize text: ", timeit.default_timer() - startTime)
+# if __name__ == "__main__":
+#     startTime = timeit.default_timer()
+#     currentDir = os.getcwd()
+#     modelDir = os.path.join(currentDir, "model")
+#     outputDir = os.path.join(currentDir, "AudioFolder")
+#     vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
+#     #delete everything in the output folder
+#     for file in os.listdir(outputDir):
+#         os.remove(os.path.join(outputDir, file))
+#     print("Time taken to initilize: ", timeit.default_timer() - startTime)
     
-    # # Load the model
-    startTime = timeit.default_timer()
-    for message in vntts.load_model():
-        print(message)
-    print("Time taken to load model: ", timeit.default_timer() - startTime)
+#     # # Load the model
+#     startTime = timeit.default_timer()
+#     for message in vntts.load_model(modelDir):
+#         print(message)
+#     print("Time taken to load model: ", timeit.default_timer() - startTime)
     
-    # Generate speech
-    startTime = timeit.default_timer()
-    print("timer started")
-    output_path = vntts.text_to_speech("Xin chào, bây giờ tôi là gói Python")
-    print(f"Speech generated at: {output_path}")
+#     # Generate speech
+#     startTime = timeit.default_timer()
+#     print("timer started")
+#     output_path = vntts.text_to_speech("Việt Nam phát triển mạnh trong những thập kỷ qua, nhưng tham nhũng khiến miếng bánh tăng trưởng được chia không đều.")
+#     print(f"Speech generated at: {output_path}")
     

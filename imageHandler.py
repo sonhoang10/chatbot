@@ -129,9 +129,9 @@ def image_handler(image_path):
     objects = detect_objects(image_path)
     return caption, objects
 
-### Example usage: ###
+# ### Example usage: ###
 # strt = time.time()
-# image_path =  "C:\\Users\\An\\Downloads\\chatbot\\sessions\\abc123\\uploads\\floating castle.jpg"
+# image_path =  "C:\\Users\\An\\Downloads\\chatbot\\sessions\\abc123\\uploads\\image.jpg"
 # image_path = os.path.normpath(image_path)
 # caption, objects = image_handler(image_path)
 # print ("caption: " + caption)

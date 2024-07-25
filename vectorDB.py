@@ -50,7 +50,7 @@ def vectorStorage(chunks, sessionID):
     embeddings_function = OpenAIEmbeddings(
                 api_key=os.getenv("OPENAI_API_KEY")
             )
-    db = Chroma.from_documents(documents=chunks, embedding=embeddings_function, persist_directory=sessionDir)
+    db = Chroma.from_documents(documents=chunks, embedding=embeddings_function, persist_directory=sessionDir, client_settings={"anonymized_telemetry": False})
     #retriever = db.as_retriever()
     return db
 
@@ -81,11 +81,10 @@ def createChain(db):
 
     ### Answer question ###
     system_prompt = (
-        "You are an assistant for question-answering tasks. "
+        "You are an assistant for question-answering tasks. When asking about a document, assume the document is embedded"
         "Use the following pieces of retrieved context to answer "
         "the question. If you don't know the answer, say that you "
-        "don't know. Use 12 sentences minimum and keep the "
-        "answer concise."
+        "don't know. Keep the answer concise."
         "\n\n"
         "{context}"
     )
@@ -159,24 +158,49 @@ def chatResponseChain(chain):
 async def chatResponse(chain, question, sessionID):
     response = ""
     imgMetaData = None
-    async for s in chain.astream(
-        {"input": question},
-        config={
-            "configurable": {"session_id": sessionID}
-        },  # constructs a key "abc123" in `store`.
-    ):
-        try:
+    try:
+        async for s in chain.astream(
+            {"input": question},
+            config={
+                "configurable": {"session_id": sessionID}
+            },  # constructs a key "abc123" in `store`.
+        ):
             try:
-                if s['context'][0].metadata:
-                    imgMetaData = s['context']
-                    # print (imgMetaData)
-            except:
+                try:
+                    if s['context'][0].metadata:
+                        imgMetaData = s['context']
+                        # print (imgMetaData)
+                except:
+                    pass
+                chunk = s['answer']
+                response += chunk
+                yield chunk  # Yield each chunk instead of accumulating the entire response
+            except KeyError:
                 pass
-            chunk = s['answer']
-            response += chunk
-            yield chunk  # Yield each chunk instead of accumulating the entire response
-        except KeyError:
-            pass
+    except:
+        #if there is an error, delete the session and retry
+        #deleteSession(sessionID)
+        async for s in chain.astream(
+            {"input": question},
+            config={
+                "configurable": {"session_id": sessionID}
+            },  # constructs a key "abc123" in `store`.
+        ):
+            try:
+                try:
+                    if s['context'][0].metadata:
+                        imgMetaData = s['context']
+                        # print (imgMetaData)
+                except:
+                    pass
+                chunk = s['answer']
+                response += chunk
+                yield chunk  # Yield each chunk instead of accumulating the entire response
+            except KeyError:
+                pass
+
+            
+
     chat_history = get_session_history(sessionID)
     chat_history.add_user_message(question)
     chat_history.add_ai_message(response)
@@ -189,7 +213,13 @@ async def chatResponse(chain, question, sessionID):
 def deleteSession(sessionID = "abc123"):
     basedir = setup_session_dir(sessionID)
     #delete database folder
-    shutil.rmtree(basedir)
+    try:
+        shutil.rmtree(basedir)
+    except:
+        #reset the database
+        db = Chroma.from_texts([], persist_directory=basedir, embedding_function=OpenAIEmbeddings())
+        db.reset_collection()
+
     setup_session_dir(sessionID)
         
 
@@ -200,6 +230,8 @@ def embed(file_path, sessionID = "abc123"):
     chain = createChain(db)
     ragChain = chatResponseChain(chain)
     store[sessionID] = ragChain
+    #add to context that the file has been embedded
+
 
 def embedAllInDirectiory(directory, sessionID):
     base_dir = os.getcwd()
@@ -230,7 +262,7 @@ def embedImage(imageuri, sessionID="abc123"):
     docs = f"{caption}\n{objects}"
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     document = text_splitter.create_documents(texts = [docs], metadatas = [md])
-    db = Chroma.from_documents(documents=document, persist_directory=setup_session_dir(sessionID), embedding=OpenAIEmbeddings())
+    db = Chroma.from_documents(documents=document, persist_directory=setup_session_dir(sessionID), embedding=OpenAIEmbeddings(), client_settings={"anonymized_telemetry": False})
     
     
 
@@ -265,7 +297,7 @@ async def chat(question, sessionID = "abc123", ragChain = None):
     metadata = None
     async for chunk in chatResponse(ragChain, question, sessionID):
         #check if chunk is a list, if so it contains metadata, save as metadata and do not yield
-        if isinstance(chunk, list):
+        if (isinstance(chunk, list)):
             metadata = chunk
         else:
             yield chunk   
