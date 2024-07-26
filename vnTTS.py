@@ -50,7 +50,6 @@ class VNTTS:
     
     def setup(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS"):
 
-        yield f"Missing model files! Downloading from {repo_id}..."
         snapshot_download(
             repo_id=repo_id,
             repo_type="model",
@@ -61,7 +60,6 @@ class VNTTS:
             filename="speakers_xtts.pth",
             local_dir=checkpoint_dir,
         )
-        yield f"Model download finished..."
 
 
     def load_model(self, checkpoint_dir="model/"):
@@ -71,6 +69,7 @@ class VNTTS:
         config = XttsConfig() 
         config.load_json(xtts_config)
         self.model = Xtts.init_from_config(config)
+        print("Languages from config:", self.model.config["languages"])
         yield "Loading model..."
         self.model.load_checkpoint(
             config, checkpoint_dir=checkpoint_dir, use_deepspeed=False
@@ -80,16 +79,25 @@ class VNTTS:
 
         yield "Model Loaded!"
 
-        filter_cache_file = os.path.join(checkpoint_dir, "filter_cache.pkl")
-        conditioning_latents_cache_file = os.path.join(checkpoint_dir, "conditioning_latents_cache.pkl")
-        model_pickle_file = os.path.join(checkpoint_dir, "pickled_model.pkl")
-        filter_cache_file = os.path.normpath(filter_cache_file)
-        conditioning_latents_cache_file = os.path.normpath(conditioning_latents_cache_file)
-        model_pickle_file = os.path.normpath(model_pickle_file)
+        filter_cache_file = os.path.normpath(os.path.join(checkpoint_dir, "filter_cache.pkl"))
+        conditioning_latents_cache_file = os.path.normpath(os.path.join(checkpoint_dir, "conditioning_latents_cache.pkl"))
+        model_pickle_file = os.path.normpath(os.path.join(checkpoint_dir, "pickled_model.pkl"))
 
-    
-        self.filter_cache = self.load_pickle(filter_cache_file)
-        self.conditioning_latents_cache = self.load_pickle(conditioning_latents_cache_file)
+        # Load filter cache
+        try:
+            self.filter_cache = self.load_pickle(filter_cache_file)
+            yield "Filter cache loaded successfully."
+        except Exception as e:
+            yield f"Failed to load filter cache: {str(e)}. Initializing empty cache."
+            self.filter_cache = {}
+
+        # Load conditioning latents cache
+        try:
+            self.conditioning_latents_cache = self.load_pickle(conditioning_latents_cache_file)
+            yield "Conditioning latents cache loaded successfully."
+        except Exception as e:
+            yield f"Failed to load conditioning latents cache: {str(e)}. Initializing empty cache."
+            self.conditioning_latents_cache = {}
 
         # Preprocess conditioning latents and filter cache
         yield "Preprocessing conditioning latents and filter cache..."
@@ -98,9 +106,13 @@ class VNTTS:
         # Apply DeepFilter
         if audio_path not in self.filter_cache:
             filtered_audio_path = audio_path.replace(".wav", self.FILTER_SUFFIX)
-            subprocess.run(["deepFilter", audio_path, "-o", os.path.dirname(audio_path)])
+            subprocess.run(["deepFilter", audio_path, "-o", os.path.dirname(audio_path)], shell = True)
             self.filter_cache[audio_path] = filtered_audio_path
-            self.save_pickle(self.filter_cache, filter_cache_file)
+            try:
+                self.save_pickle(self.filter_cache, filter_cache_file)
+                yield "Filter cache updated and saved."
+            except Exception as e:
+                yield f"Failed to save filter cache: {str(e)}."
 
         # Compute conditioning latents
         cache_key = (
@@ -117,7 +129,11 @@ class VNTTS:
                 sound_norm_refs=self.model.config.sound_norm_refs,
             )
             self.conditioning_latents_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
-            self.save_pickle(self.conditioning_latents_cache, conditioning_latents_cache_file)
+            try:
+                self.save_pickle(self.conditioning_latents_cache, conditioning_latents_cache_file)
+                yield "Conditioning latents cache updated and saved."
+            except Exception as e:
+                yield f"Failed to save conditioning latents cache: {str(e)}."
 
         yield "Preprocessing complete!"
 
@@ -293,26 +309,26 @@ logging.basicConfig(
 )
 
 # Usage example
-# if __name__ == "__main__":
-#     startTime = timeit.default_timer()
-#     currentDir = os.getcwd()
-#     modelDir = os.path.join(currentDir, "model")
-#     outputDir = os.path.join(currentDir, "AudioFolder")
-#     vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
-#     #delete everything in the output folder
-#     for file in os.listdir(outputDir):
-#         os.remove(os.path.join(outputDir, file))
-#     print("Time taken to initilize: ", timeit.default_timer() - startTime)
+if __name__ == "__main__":
+    startTime = timeit.default_timer()
+    currentDir = os.getcwd()
+    modelDir = os.path.join(currentDir, "model")
+    outputDir = os.path.join(currentDir, "AudioFolder")
+    vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
+    #delete everything in the output folder
+    for file in os.listdir(outputDir):
+        os.remove(os.path.join(outputDir, file))
+    print("Time taken to initilize: ", timeit.default_timer() - startTime)
     
-#     # # Load the model
-#     startTime = timeit.default_timer()
-#     for message in vntts.load_model(modelDir):
-#         print(message)
-#     print("Time taken to load model: ", timeit.default_timer() - startTime)
+    # # Load the model
+    startTime = timeit.default_timer()
+    for message in vntts.load_model(modelDir):
+        print(message)
+    print("Time taken to load model: ", timeit.default_timer() - startTime)
     
-#     # Generate speech
-#     startTime = timeit.default_timer()
-#     print("timer started")
-#     output_path = vntts.text_to_speech("Việt Nam phát triển mạnh trong những thập kỷ qua, nhưng tham nhũng khiến miếng bánh tăng trưởng được chia không đều.")
-#     print(f"Speech generated at: {output_path}")
+    # Generate speech
+    startTime = timeit.default_timer()
+    print("timer started")
+    output_path = vntts.text_to_speech("Việt Nam phát triển mạnh trong những thập kỷ qua, nhưng tham nhũng khiến miếng bánh tăng trưởng được chia không đều.")
+    print(f"Speech generated at: {output_path}")
     
