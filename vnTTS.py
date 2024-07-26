@@ -17,6 +17,7 @@ from unidecode import unidecode
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from vietNorm.vietNorm import TTSnorm
+from UTSTokenizer import sent_tokenize
 import timeit
 import pickle
 
@@ -206,7 +207,7 @@ class VNTTS:
         if lang in ["ja", "zh-cn"]:
             sentences = tts_text.split("。")
         else:
-            sentences = tts_text.split(". ")
+            sentences = sent_tokenize(tts_text)
 
         startTime = timeit.default_timer()
         wav_chunks = []
@@ -224,7 +225,7 @@ class VNTTS:
                 repetition_penalty=10.0,
                 top_k=30,
                 top_p=0.85,
-                #speed = 1.3
+                speed = 1.25
             )
 
             keep_len = self.calculate_keep_len(sentence, lang)
@@ -282,6 +283,7 @@ class VNTTS:
             .replace(" ,", ",")
             .replace('"', "")
             .replace("'", "")
+            .replace("/", " / ")
             .replace("AI", "Ây Ai")
             .replace("A.I", "Ây Ai")
         )
@@ -326,9 +328,9 @@ if __name__ == "__main__":
         print(message)
     print("Time taken to load model: ", timeit.default_timer() - startTime)
     
-    # Generate speech
-    startTime = timeit.default_timer()
-    print("timer started")
-    output_path = vntts.text_to_speech("Việt Nam phát triển mạnh trong những thập kỷ qua, nhưng tham nhũng khiến miếng bánh tăng trưởng được chia không đều.")
-    print(f"Speech generated at: {output_path}")
+#     # Generate speech
+#     startTime = timeit.default_timer()
+#     print("timer started")
+#     output_path = vntts.text_to_speech("Dạ vâng, em sẵn lòng trợ giúp. Anh chị cần giúp đỡ với vấn đề gì ạ")
+#     print(f"Speech generated at: {output_path}")
     
