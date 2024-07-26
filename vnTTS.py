@@ -81,7 +81,6 @@ class VNTTS:
 
         filter_cache_file = os.path.normpath(os.path.join(checkpoint_dir, "filter_cache.pkl"))
         conditioning_latents_cache_file = os.path.normpath(os.path.join(checkpoint_dir, "conditioning_latents_cache.pkl"))
-        model_pickle_file = os.path.normpath(os.path.join(checkpoint_dir, "pickled_model.pkl"))
 
         # Load filter cache
         try:
@@ -102,9 +101,10 @@ class VNTTS:
         # Preprocess conditioning latents and filter cache
         yield "Preprocessing conditioning latents and filter cache..."
         audio_path = os.path.join(self.MODEL_DIR, "vi_sample.wav")
+        deepfilter_path = audio_path.replace(".wav", self.FILTER_SUFFIX)
         
         # Apply DeepFilter
-        if audio_path not in self.filter_cache:
+        if not os.path.exists(deepfilter_path):
             filtered_audio_path = audio_path.replace(".wav", self.FILTER_SUFFIX)
             subprocess.run(["deepFilter", audio_path, "-o", os.path.dirname(audio_path)], shell = True)
             self.filter_cache[audio_path] = filtered_audio_path
