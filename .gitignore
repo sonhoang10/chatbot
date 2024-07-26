@@ -8,3 +8,6 @@
 /faiss_index
 /sessions
 /__pycache__
+/UTSTokenizer/__pycache__
+/model
+/vietNorm/__pycache__
