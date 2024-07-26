@@ -70,7 +70,6 @@ class VNTTS:
         config = XttsConfig() 
         config.load_json(xtts_config)
         self.model = Xtts.init_from_config(config)
-        print("Languages from config:", self.model.config["languages"])
         yield "Loading model..."
         self.model.load_checkpoint(
             config, checkpoint_dir=checkpoint_dir, use_deepspeed=False
@@ -311,24 +310,22 @@ logging.basicConfig(
 )
 
 # Usage example
-if __name__ == "__main__":
-    startTime = timeit.default_timer()
-    currentDir = os.getcwd()
-    modelDir = os.path.join(currentDir, "model")
-    outputDir = os.path.join(currentDir, "AudioFolder")
-    vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
-    #delete everything in the output folder
-    for file in os.listdir(outputDir):
-        os.remove(os.path.join(outputDir, file))
-    print("Time taken to initilize: ", timeit.default_timer() - startTime)
+# if __name__ == "__main__":
+#     currentDir = os.getcwd()
+#     modelDir = os.path.join(currentDir, "model")
+#     outputDir = os.path.join(currentDir, "AudioFolder")
+#     vntts = VNTTS(model_dir=modelDir , output_dir=outputDir)
+#     #delete everything in the output folder
+#     for file in os.listdir(outputDir):
+#         os.remove(os.path.join(outputDir, file))
     
-    # # Load the model
-    startTime = timeit.default_timer()
-    for message in vntts.load_model(modelDir):
-        print(message)
-    print("Time taken to load model: ", timeit.default_timer() - startTime)
+#     # # Load the model
+#     startTime = timeit.default_timer()
+#     for message in vntts.load_model(modelDir):
+#         print(message)
+#     print("Time taken to load model: ", timeit.default_timer() - startTime)
     
-#     # Generate speech
+# #     # Generate speech
 #     startTime = timeit.default_timer()
 #     print("timer started")
 #     output_path = vntts.text_to_speech("Dạ vâng, em sẵn lòng trợ giúp. Anh chị cần giúp đỡ với vấn đề gì ạ")
