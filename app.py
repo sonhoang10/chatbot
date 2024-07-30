@@ -10,6 +10,7 @@ from vnTTS import VNTTS
 import asyncio
 from queue import Queue
 from threading import Thread
+from TTSvi import TTSProcessor
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,6 +22,10 @@ sessionID = 'abc123' #default sessionID
 modelDir = os.path.join(basedir, "model")
 outputDir = os.path.join(basedir, "sessions", sessionID, "AudioFolder")
 ttsModel = VNTTS(model_dir=modelDir, output_dir=outputDir)
+
+hf_token = os.environ.get("HF_TOKEN")
+tts_processor = TTSProcessor(hf_token=hf_token)
+
 try:
     for message in ttsModel.load_model(modelDir):
         print(message)
@@ -148,10 +153,14 @@ def chatbot():
 def audioReturn():
     data = request.get_json()
     answer = data.get('answer')
+    global directory
     directory = os.path.normpath((basedir + '\\AudioFolder\\'))
     if not os.path.exists(directory):
         os.makedirs(directory)
-    id = ttsModel.text_to_speech(answer) #returns audioId of the audio file
+    id, output_audio, metrics_text = tts_processor.text_to_speech(answer,directory)
+    print(id)
+    print(output_audio)
+    print(metrics_text)
     return jsonify({'message': 'Audio file created!', 'audioId': id})
 
 @app.route('/mp3/<id>', methods=['GET'])
@@ -170,7 +179,7 @@ def audio():
     response_text = data.get('text_tran_tospeech')
              # Convert response to speech
     if response_text:         
-        response_audio = ttsModel.text_to_speech(response_text)
+        response_audio = tts_processor.text_to_speech(response_text,directory)
         return jsonify({'response_audio': response_audio})
     
 @app.route('/files', methods=['GET', 'POST'])
