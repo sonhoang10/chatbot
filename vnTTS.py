@@ -26,7 +26,7 @@ from TTS.tts.models.xtts import Xtts
 from UTSTokenizer import sent_tokenize
 import timeit
 import pickle
-from ChangetextVI import sum_text
+from normalize_vietnamese_text import sum_text
 
 class VNTTS:
     def __init__(self, model_dir, output_dir):
