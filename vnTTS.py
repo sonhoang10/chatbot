@@ -1,3 +1,10 @@
+import csv
+import datetime
+import os
+import re
+import time
+import uuid
+from io import StringIO
 import importlib
 import argparse
 import hashlib
@@ -16,10 +23,10 @@ from huggingface_hub import hf_hub_download, snapshot_download
 from unidecode import unidecode
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
-from vietNorm.vietNorm import TTSnorm
 from UTSTokenizer import sent_tokenize
 import timeit
 import pickle
+from ChangetextVI import sum_text
 
 class VNTTS:
     def __init__(self, model_dir, output_dir):
@@ -200,6 +207,8 @@ class VNTTS:
             )
             self.conditioning_latents_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
 
+        tts_text = re.sub("([^\x00-\x7F]|\w)(\.|\。|\?)", r"\1 \2\2", tts_text)
+
         if normalize_text and lang == "vi":
             tts_text = self.normalize_vietnamese_text(tts_text)
 
@@ -273,20 +282,11 @@ class VNTTS:
 
     @staticmethod
     def normalize_vietnamese_text(text):
-        text = (
-            TTSnorm(text, unknown=True, lower=False, rule=True)
-            .replace("..", ".")
-            .replace("!.", "!")
-            .replace("?.", "?")
-            .replace(" .", ".")
-            .replace(" ,", ",")
-            .replace('"', "")
-            .replace("'", "")
-            .replace("/", " / ")
-            .replace("AI", "Ây Ai")
-            .replace("A.I", "Ây Ai")
-        )
-        return text
+        # Ensure text is in utf-8 encoding
+        text = text.encode('utf-8', errors='ignore').decode('utf-8')
+        normalized_text = sum_text(text)
+        
+        return normalized_text
 
     @staticmethod
     def calculate_keep_len(text, lang):
@@ -295,7 +295,7 @@ class VNTTS:
 
         word_count = len(text.split())
         num_punct = text.count(".") + text.count("!") + text.count("?") + text.count(",")
-
+        
         if word_count < 5:
             return 15000 * word_count + 2000 * num_punct
         elif word_count < 10:
