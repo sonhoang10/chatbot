@@ -11,7 +11,7 @@ import torchaudio
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
-from ChangetextVI import sum_text
+from normalize_vietnamese_text import sum_text
 import timeit
 
 class TTSProcessor:
