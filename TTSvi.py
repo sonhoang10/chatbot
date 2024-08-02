@@ -140,7 +140,9 @@ class TTSProcessor:
         prompt = text # Text to be spoken
         language = "vi" # Language
         speed = 1.15 # Speed
-        audio_file_pth = r"C:\Son\TTS\demo\sound\audio8.wav" # Reference audio file
+        audio_file_pth = r"C:\Son\sound\audio8.wav" # Reference audio file
+        if not os.path.isfile(audio_file_pth):  #Check the audio_file is exist 
+            print(f"File không tồn tại: {audio_file_pth}") 
         start = timeit.default_timer() # Start time
         audio_paths, metrics_text = self.predict(prompt, language, audio_file_pth, speed, save_file_location) # Process text
         print("Time taken: ", timeit.default_timer() - start) # Print elapsed time
